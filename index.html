@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="Próximos autobuses e13 entre Granollers y Mataró." />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>Bus Granollers ↔ Mataró</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">e13 · Granollers ↔ Mataró</p>
+        <h1>Próximo bus</h1>
+      </div>
+      <div class="clock" id="clock">--:--</div>
+    </header>
+
+    <section class="location-panel">
+      <div>
+        <span class="muted">Ubicación</span>
+        <div class="location-value" id="locationText">Detectando…</div>
+      </div>
+      <button id="locateBtn" class="secondary-btn" type="button">Usar mi ubicación</button>
+    </section>
+
+    <section class="route-switcher" aria-label="Seleccionar trayecto">
+      <button id="toMataroBtn" class="route-btn" type="button">
+        <span class="route-city">Granollers</span>
+        <span class="route-arrow">→</span>
+        <span class="route-city">Mataró</span>
+      </button>
+      <button id="toGranollersBtn" class="route-btn" type="button">
+        <span class="route-city">Mataró</span>
+        <span class="route-arrow">→</span>
+        <span class="route-city">Granollers</span>
+      </button>
+    </section>
+
+    <section class="route-meta">
+      <div>
+        <span class="muted">Origen</span>
+        <strong id="originName">—</strong>
+      </div>
+      <div>
+        <span class="muted">Destino</span>
+        <strong id="destinationName">—</strong>
+      </div>
+    </section>
+
+    <div class="calendar-chip" id="calendarChip">—</div>
+    <div class="calendar-warning hidden" id="calendarWarning"></div>
+
+    <section id="results" class="results">
+      <article class="next-card skeleton">
+        <div class="next-label">PRÓXIMO</div>
+        <div class="next-main">
+          <div>
+            <div class="next-time">--:--</div>
+            <div class="countdown">Calculando…</div>
+          </div>
+          <div class="arrival">
+            <span>Llegada</span>
+            <strong>--:--</strong>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="info-card">
+      <strong>Información del horario</strong>
+      <p>Fuente: Sagalés e13 Mataró · Granollers · Sabadell. Horario con inicio 15/09/2025.</p>
+      <p>Horarios previstos; pueden variar por incidencias de tráfico.</p>
+      <p class="small">Los festivos automáticos incluidos en esta versión corresponden a 2026. El archivo <code>data.js</code> permite añadir años posteriores.</p>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
