@@ -25,6 +25,18 @@ test("sábado laborable incluye saturdayOnly", () => {
   assert.equal(trips.some(t => t.departure === "23:50" && t.saturdayOnly), true);
 });
 
+test("verano Mataró→Granollers: 22:09 solo sábado y 22:52 también circula domingo", () => {
+  const sunday = new Date(2026, 5, 7);
+  const sundayDepartures = tripsForDate(sunday, "toGranollers").map(t => t.departure);
+  assert.equal(sundayDepartures.includes("22:09"), false);
+  assert.equal(sundayDepartures.includes("22:52"), true);
+
+  const saturday = new Date(2026, 5, 6);
+  const saturdayDepartures = tripsForDate(saturday, "toGranollers").map(t => t.departure);
+  assert.equal(saturdayDepartures.includes("22:09"), true);
+  assert.equal(saturdayDepartures.includes("22:52"), true);
+});
+
 test("23:50→00:20 llega al día siguiente", () => {
   const d = new Date(2026, 8, 5);
   const { departureDate, arrivalDate } = makeTripDates(d, { departure:"23:50", arrival:"00:20" });
