@@ -3,8 +3,8 @@
   "accepted_pdf_url": null,
   "accepted_schedule_sha256": "3e29755acc20c2631b1c34e11f4b544c252085309426ef3e3f2a44cc97d1c132",
   "last_changed_at": null,
-  "pending_pdf_sha256": null,
-  "pending_pdf_url": null,
-  "pending_detected_at": null,
-  "pending_error": null
+  "pending_pdf_sha256": "6d92152381bae1e9491d11fd3610dd85fd63b4406bb0f1d9c0c913a43a4aa8fc",
+  "pending_pdf_url": "https://www.sagales.com/uploads/imagenes/8a5260c09315cb3cb69cefbc4ce62a2c35a842fd.pdf",
+  "pending_detected_at": "2026-09-10T20:56:17Z",
+  "pending_error": "No se ha encontrado la fila de códigos de parada"
 }
