@@ -1,0 +1,25 @@
+name: Inspect Sagalés timetable link
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/inspect-sagales.yml"]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect timetable HTML controls
+        run: |
+          python - <<'PY'
+          import re, urllib.request
+          u='https://www.sagales.com/es/linia/555'
+          req=urllib.request.Request(u, headers={'User-Agent':'Mozilla/5.0'})
+          html=urllib.request.urlopen(req, timeout=30).read().decode('utf-8','replace')
+          for m in re.finditer(r'(?i)horarios|horaris|horario', html):
+              a=max(0,m.start()-900); b=min(len(html),m.end()+900)
+              print('\n--- CONTEXT ---\n'+html[a:b].replace('\n',' ')[:2200])
+          print('\n--- SCRIPT SRCS ---')
+          for s in re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I):
+              print(s)
+          PY
