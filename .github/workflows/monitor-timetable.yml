@@ -1,0 +1,95 @@
+name: Monitor e13 timetable
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: e13-timetable-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install parser dependencies
+        run: pip install requests beautifulsoup4 pymupdf
+
+      - name: Check official Sagalés PDF
+        id: monitor
+        run: python scripts/monitor_timetable.py
+
+      - name: Setup Node
+        if: steps.monitor.outputs.status == 'updated'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate updated timetable
+        if: steps.monitor.outputs.status == 'updated'
+        run: npm test
+
+      - name: Commit monitor state or timetable update
+        run: |
+          if git diff --quiet -- data.js monitor/e13-state.json; then
+            echo "No repository changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.js monitor/e13-state.json
+          if [ "${{ steps.monitor.outputs.status }}" = "updated" ]; then
+            git commit -m "Auto-update e13 timetable from Sagalés"
+          else
+            git commit -m "Update e13 timetable monitor state"
+          fi
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Open review issue if a new PDF cannot be validated
+        if: steps.monitor.outputs.alert == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PDF_URL: ${{ steps.monitor.outputs.pdf_url }}
+          ERROR_MESSAGE: ${{ steps.monitor.outputs.message }}
+        run: |
+          existing=$(gh issue list --state open --search "Nuevo PDF e13 pendiente de validar in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "An open review issue already exists: #$existing"
+            exit 0
+          fi
+          body=$(cat <<EOF
+          Sagalés ha publicado un PDF de horarios e13 distinto al último aceptado, pero el parser de seguridad no ha podido validarlo automáticamente.
+
+          **PDF detectado:** $PDF_URL
+
+          **Motivo:** $ERROR_MESSAGE
+
+          La web **no se ha modificado**. Hay que revisar el PDF y adaptar el parser o los datos antes de actualizar el horario.
+          EOF
+          )
+          gh issue create --title "Nuevo PDF e13 pendiente de validar" --body "$body"
+
+      - name: Write summary
+        if: always()
+        run: |
+          echo "### Monitor e13" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Estado: ${{ steps.monitor.outputs.status || 'error' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- PDF: ${{ steps.monitor.outputs.pdf_url || 'no disponible' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frecuencia: cada 6 horas" >> "$GITHUB_STEP_SUMMARY"
