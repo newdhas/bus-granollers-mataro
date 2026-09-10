@@ -9,18 +9,16 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect timetable HTML controls
+      - name: Inspect pdfBus implementation
         run: |
           python - <<'PY'
           import re, urllib.request
-          u='https://www.sagales.com/es/linia/555'
-          req=urllib.request.Request(u, headers={'User-Agent':'Mozilla/5.0'})
-          html=urllib.request.urlopen(req, timeout=30).read().decode('utf-8','replace')
-          print('HTML bytes:', len(html))
-          for m in re.finditer(r'(?i)horarios|horaris|horario', html):
-              a=max(0,m.start()-900); b=min(len(html),m.end()+900)
-              print('\n--- CONTEXT ---\n'+html[a:b].replace('\n',' ')[:2200])
-          print('\n--- SCRIPT SRCS ---')
-          for s in re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I):
-              print(s)
+          urls=['https://www.sagales.com/front/js/linia.js','https://www.sagales.com/front/js/script.js']
+          for u in urls:
+              req=urllib.request.Request(u, headers={'User-Agent':'Mozilla/5.0'})
+              text=urllib.request.urlopen(req, timeout=30).read().decode('utf-8','replace')
+              print('\n###',u,'bytes',len(text))
+              for m in re.finditer(r'pdfBus', text, re.I):
+                  a=max(0,m.start()-1000); b=min(len(text),m.end()+2500)
+                  print(text[a:b])
           PY
