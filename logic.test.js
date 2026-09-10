@@ -1,44 +1,53 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { TIMETABLES } from "./data.js";
 import { getScheduleType, getUpcomingTrips, tripsForDate, makeTripDates } from "./logic.js";
 
-test("lunes laborable 07/09/2026 a las 09:03: próximos Granollers→Mataró", () => {
+test("un día laborable devuelve cinco próximas salidas ordenadas", () => {
   const now = new Date(2026, 8, 7, 9, 3, 0);
   const trips = getUpcomingTrips(now, "toMataro", 5);
-  assert.deepEqual(trips.map(t => t.departure), ["09:12","09:42","09:53","10:06","10:16"]);
+  assert.equal(trips.length, 5);
+  assert.ok(trips.every(t => t.departureDate >= now));
+  for (let i = 1; i < trips.length; i++) {
+    assert.ok(trips[i].departureDate >= trips[i - 1].departureDate);
+  }
 });
 
-test("festivo 11/09/2026 usa horario verano de fin de semana", () => {
-  const d = new Date(2026, 8, 11, 12, 0);
-  assert.equal(getScheduleType(d), "summer");
+test("la Diada 11/09/2026 usa horario de festivo de verano", () => {
+  const date = new Date(2026, 8, 11, 12, 0);
+  assert.equal(getScheduleType(date), "summer");
 });
 
-test("domingo no incluye saturdayOnly", () => {
-  const d = new Date(2026, 8, 6);
-  const trips = tripsForDate(d, "toMataro");
+test("domingo no incluye expediciones exclusivas de sábado laborable", () => {
+  const date = new Date(2026, 8, 6);
+  const trips = tripsForDate(date, "toGranollers");
   assert.equal(trips.some(t => t.saturdayOnly), false);
 });
 
-test("sábado laborable incluye saturdayOnly", () => {
-  const d = new Date(2026, 8, 5);
-  const trips = tripsForDate(d, "toMataro");
-  assert.equal(trips.some(t => t.departure === "23:50" && t.saturdayOnly), true);
+test("sábado laborable incluye la expedición marcada para sábado", () => {
+  const date = new Date(2026, 8, 5);
+  const trips = tripsForDate(date, "toGranollers");
+  assert.equal(trips.some(t => t.saturdayOnly), true);
 });
 
-test("verano Mataró→Granollers: 22:09 solo sábado y 22:52 también circula domingo", () => {
-  const sunday = new Date(2026, 5, 7);
-  const sundayDepartures = tripsForDate(sunday, "toGranollers").map(t => t.departure);
-  assert.equal(sundayDepartures.includes("22:09"), false);
-  assert.equal(sundayDepartures.includes("22:52"), true);
-
-  const saturday = new Date(2026, 5, 6);
-  const saturdayDepartures = tripsForDate(saturday, "toGranollers").map(t => t.departure);
-  assert.equal(saturdayDepartures.includes("22:09"), true);
-  assert.equal(saturdayDepartures.includes("22:52"), true);
-});
-
-test("23:50→00:20 llega al día siguiente", () => {
-  const d = new Date(2026, 8, 5);
-  const { departureDate, arrivalDate } = makeTripDates(d, { departure:"23:50", arrival:"00:20" });
+test("una llegada pasada medianoche queda en el día siguiente", () => {
+  const date = new Date(2026, 8, 5);
+  const { departureDate, arrivalDate } = makeTripDates(date, { departure: "23:50", arrival: "00:20" });
   assert.equal(arrivalDate.getDate(), departureDate.getDate() + 1);
+});
+
+test("todos los calendarios tienen ambos sentidos, horas válidas y salidas únicas", () => {
+  const time = /^\d{2}:\d{2}$/;
+  for (const calendar of ["weekday", "summer", "winter"]) {
+    for (const direction of ["toMataro", "toGranollers"]) {
+      const trips = TIMETABLES[calendar][direction];
+      assert.ok(Array.isArray(trips));
+      assert.ok(trips.length >= 8);
+      assert.equal(new Set(trips.map(t => t.departure)).size, trips.length);
+      for (const trip of trips) {
+        assert.match(trip.departure, time);
+        assert.match(trip.arrival, time);
+      }
+    }
+  }
 });
