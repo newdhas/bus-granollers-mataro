@@ -46,10 +46,13 @@ jobs:
           node-version: 22
 
       - name: Validate updated timetable
+        id: timetable_tests
         if: steps.monitor.outputs.status == 'updated'
+        continue-on-error: true
         run: npm test
 
       - name: Commit monitor state or timetable update
+        if: steps.monitor.outputs.status != 'updated' || steps.timetable_tests.outcome == 'success'
         run: |
           if git diff --quiet -- data.js monitor/e13-state.json; then
             echo "No repository changes to commit."
@@ -66,29 +69,41 @@ jobs:
           git pull --rebase origin main
           git push origin main
 
-      - name: Open review issue if a new PDF cannot be validated
-        if: steps.monitor.outputs.alert == 'true'
+      - name: Open review issue when automatic validation is unsafe
+        if: steps.monitor.outputs.alert == 'true' || (steps.monitor.outputs.status == 'updated' && steps.timetable_tests.outcome == 'failure')
         env:
           GH_TOKEN: ${{ github.token }}
           PDF_URL: ${{ steps.monitor.outputs.pdf_url }}
-          ERROR_MESSAGE: ${{ steps.monitor.outputs.message }}
+          MONITOR_MESSAGE: ${{ steps.monitor.outputs.message }}
+          TEST_OUTCOME: ${{ steps.timetable_tests.outcome }}
         run: |
           existing=$(gh issue list --state open --search "Nuevo PDF e13 pendiente de validar in:title" --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             echo "An open review issue already exists: #$existing"
             exit 0
           fi
+
+          if [ "$TEST_OUTCOME" = "failure" ]; then
+            reason="El PDF se pudo extraer, pero los tests de la aplicación fallaron."
+          else
+            reason="$MONITOR_MESSAGE"
+          fi
+
           body=$(cat <<EOF
-          Sagalés ha publicado un PDF de horarios e13 distinto al último aceptado, pero el parser de seguridad no ha podido validarlo automáticamente.
+          Sagalés ha publicado un PDF de horarios e13 distinto al último aceptado, pero no se ha podido validar de forma suficientemente segura para publicarlo automáticamente.
 
           **PDF detectado:** $PDF_URL
 
-          **Motivo:** $ERROR_MESSAGE
+          **Motivo:** $reason
 
-          La web **no se ha modificado**. Hay que revisar el PDF y adaptar el parser o los datos antes de actualizar el horario.
+          La web **no se ha modificado**. Hay que revisar el PDF antes de actualizar el horario.
           EOF
           )
           gh issue create --title "Nuevo PDF e13 pendiente de validar" --body "$body"
+
+      - name: Fail if updated timetable tests failed
+        if: steps.monitor.outputs.status == 'updated' && steps.timetable_tests.outcome == 'failure'
+        run: exit 1
 
       - name: Write summary
         if: always()
