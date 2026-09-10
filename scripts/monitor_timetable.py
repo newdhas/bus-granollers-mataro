@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
 
-import fitz
+import pymupdf
 import requests
 from bs4 import BeautifulSoup
 
@@ -21,10 +21,11 @@ SOURCE_PAGES = [
     "https://www.sagales.com/es/linia/555",
     "https://www.sagales.com/es/lineas/4?origenCL=34&destiCL=65",
 ]
-USER_AGENT = "Mozilla/5.0 (compatible; e13-timetable-monitor/1.0; +https://github.com/newdhas/bus-granollers-mataro)"
+USER_AGENT = "Mozilla/5.0 (compatible; e13-timetable-monitor/1.1; +https://github.com/newdhas/bus-granollers-mataro)"
 TIME_RE = re.compile(r"^(?:\d{1,2}\.\d{2}|-)$")
 CODE_RE = re.compile(r"^\d{4}$")
-PDF_RE = re.compile(r"https?://[^\"'<>\s]+?\.pdf(?:\?[^\"'<>\s]*)?", re.I)
+PDF_IN_TEXT_RE = re.compile(r"(?:https?://|/)[^\"'()<>\s]+?\.pdf(?:\?[^\"'()<>\s]*)?", re.I)
+QUOTED_PDF_RE = re.compile(r"[\"']([^\"']+?\.pdf(?:\?[^\"']*)?)[\"']", re.I)
 LEFT_CODES = ["3314", "9735", "9299", "2365", "9458", "4925", "4930", "8804", "2929"]
 RIGHT_CODES = ["2929", "2931", "2932", "9458", "2365", "9323", "3630", "3237", "3314"]
 BLUE_TARGET = (0.74, 0.894, 0.968)
@@ -33,6 +34,14 @@ BASELINE_SCHEDULE_SHA256 = "3e29755acc20c2631b1c34e11f4b544c252085309426ef3e3f2a
 
 class MonitorError(RuntimeError):
     pass
+
+
+class PendingTimetable(MonitorError):
+    def __init__(self, url: str, pdf_bytes: bytes, reason: str):
+        super().__init__(reason)
+        self.url = url
+        self.pdf_bytes = pdf_bytes
+        self.reason = reason
 
 
 def now_iso() -> str:
@@ -55,58 +64,62 @@ def fetch(session: requests.Session, url: str) -> requests.Response:
 
 
 def candidate_pdf_urls(html: str, base_url: str) -> list[tuple[int, str]]:
+    """Return every PDF-like URL on the Sagalés page, best candidates first.
+
+    Sagalés mixes the timetable link with PDF attachments for incidents, so a
+    URL is never trusted just because it is the first PDF found.
+    """
     soup = BeautifulSoup(html, "html.parser")
     candidates: dict[str, int] = {}
 
-    def add(raw: str, score: int) -> None:
-        if not raw:
+    def add(raw: Any, score: int, context: str = "") -> None:
+        if isinstance(raw, (list, tuple)):
+            for value in raw:
+                add(value, score, context)
             return
-        match = re.search(r"(?:https?://|/)[^\"'()\s]+?\.pdf(?:\?[^\"'()\s]*)?", raw, re.I)
-        if match:
-            raw = match.group(0)
-        if ".pdf" not in raw.lower():
+        if raw is None:
             return
-        url = urljoin(base_url, raw.replace("&amp;", "&"))
-        candidates[url] = max(score, candidates.get(url, -1))
+        raw = str(raw).replace("&amp;", "&")
+        matches = PDF_IN_TEXT_RE.findall(raw)
+        if matches:
+            values = matches
+        elif ".pdf" in raw.lower() and not raw.lower().startswith("javascript:"):
+            values = [raw.strip(" \"'()")]
+        else:
+            values = []
 
-    for anchor in soup.find_all("a"):
-        text = " ".join(anchor.stripped_strings).lower()
-        parent_text = " ".join(anchor.parent.stripped_strings).lower() if anchor.parent else ""
-        score = 0
-        if "horario" in text or "horaris" in text:
-            score += 100
-        if "pdf" in text:
-            score += 30
-        if "e13" in parent_text:
-            score += 80
-        for raw in (anchor.get("href", ""), anchor.get("data-href", ""), anchor.get("data-url", ""), anchor.get("onclick", "")):
-            add(raw, score + (20 if "e13" in raw.lower() else 0))
+        context_l = context.lower()
+        for value in values:
+            value = value.replace("\\/", "/")
+            url = urljoin(base_url, value)
+            local_score = score
+            if "horario" in context_l or "horaris" in context_l:
+                local_score += 120
+            if "e13" in context_l:
+                local_score += 100
+            if "incid" in context_l or "afect" in context_l or "adjunt" in context_l:
+                local_score -= 60
+            candidates[url] = max(local_score, candidates.get(url, -10_000))
 
-    for match in PDF_RE.findall(html):
-        add(match, 100 if "e13" in match.lower() else 20)
+    for tag in soup.find_all(True):
+        own_text = " ".join(tag.stripped_strings)
+        parent_text = " ".join(tag.parent.stripped_strings) if tag.parent else ""
+        context = f"{own_text} {parent_text}"
+        for value in tag.attrs.values():
+            add(value, 10, context)
+
+    for match in QUOTED_PDF_RE.finditer(html):
+        start = max(0, match.start() - 350)
+        end = min(len(html), match.end() + 350)
+        add(match.group(1), 5, html[start:end])
+
+    # Last-resort scan for absolute/root-relative PDF URLs not inside quotes.
+    for match in PDF_IN_TEXT_RE.finditer(html):
+        start = max(0, match.start() - 350)
+        end = min(len(html), match.end() + 350)
+        add(match.group(0), 0, html[start:end])
 
     return sorted(((score, url) for url, score in candidates.items()), reverse=True)
-
-
-def discover_pdf(session: requests.Session) -> tuple[str, bytes]:
-    errors: list[str] = []
-    for source in SOURCE_PAGES:
-        try:
-            page = fetch(session, source)
-        except Exception as exc:
-            errors.append(f"{source}: {exc}")
-            continue
-
-        for _, url in candidate_pdf_urls(page.text, page.url):
-            try:
-                response = fetch(session, url)
-                content_type = response.headers.get("content-type", "").lower()
-                if response.content.startswith(b"%PDF-") or "application/pdf" in content_type:
-                    return response.url, response.content
-            except Exception as exc:
-                errors.append(f"{url}: {exc}")
-
-    raise MonitorError("No se ha podido localizar/descargar el PDF oficial. " + " | ".join(errors[-5:]))
 
 
 def is_blue(fill: Any) -> bool:
@@ -131,7 +144,7 @@ def group_by_y(items: list[tuple[float, float, str]], tolerance: float) -> list[
     return groups
 
 
-def half_rows(page: fitz.Page, left: bool) -> list[tuple[list[str | None], bool]]:
+def half_rows(page: pymupdf.Page, left: bool) -> list[tuple[list[str | None], bool]]:
     code_words: list[tuple[float, float, str]] = []
     time_words: list[tuple[float, float, str]] = []
 
@@ -190,7 +203,7 @@ def norm_time(value: str | None) -> str | None:
     return f"{hour:02d}:{minute:02d}"
 
 
-def extract_route(page: fitz.Page, left: bool, dep_col: int, arr_col: int) -> list[dict[str, Any]]:
+def extract_route(page: pymupdf.Page, left: bool, dep_col: int, arr_col: int) -> list[dict[str, Any]]:
     result = []
     for cols, saturday_only in half_rows(page, left):
         departure = norm_time(cols[dep_col])
@@ -205,7 +218,7 @@ def minutes(value: str) -> int:
     return hour * 60 + minute
 
 
-def validate_timetables(data: dict[str, Any], doc: fitz.Document) -> None:
+def validate_timetables(data: dict[str, Any], doc: pymupdf.Document) -> None:
     if doc.page_count < 3:
         raise MonitorError(f"PDF inesperado: solo tiene {doc.page_count} páginas")
 
@@ -237,8 +250,8 @@ def validate_timetables(data: dict[str, Any], doc: fitz.Document) -> None:
                 if not (15 <= duration <= 65):
                     raise MonitorError(f"Duración sospechosa {duration} min: {calendar}/{direction} {trip}")
 
-    # Hoy el PDF usa una única fila azul por sentido en cada tabla de fin de semana.
-    # Si cambia el formato, se detiene la actualización y se pide revisión manual.
+    # Safety check: the current document format uses exactly one blue Saturday-only
+    # row per direction in each weekend table. A changed layout requires review.
     for calendar in ("summer", "winter"):
         for direction in ("toMataro", "toGranollers"):
             marked = sum(1 for t in data[calendar][direction] if t["saturdayOnly"])
@@ -248,7 +261,7 @@ def validate_timetables(data: dict[str, Any], doc: fitz.Document) -> None:
 
 def parse_pdf(pdf_bytes: bytes) -> dict[str, Any]:
     try:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     except Exception as exc:
         raise MonitorError(f"No se puede abrir el PDF: {exc}") from exc
 
@@ -268,6 +281,68 @@ def parse_pdf(pdf_bytes: bytes) -> dict[str, Any]:
     }
     validate_timetables(data, doc)
     return data
+
+
+def looks_like_e13_timetable(pdf_bytes: bytes) -> bool:
+    """Loose signature used only to decide whether a failed PDF deserves an alert."""
+    try:
+        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+        if doc.page_count < 3:
+            return False
+        text = "\n".join(doc[i].get_text().lower() for i in range(min(3, doc.page_count)))
+    except Exception:
+        return False
+    return (
+        "granollers" in text
+        and "mataró" in text
+        and "sabadell" in text
+        and ("e13" in text or "dilluns a divendres" in text)
+    )
+
+
+def discover_timetable(session: requests.Session) -> tuple[str, bytes, dict[str, Any]]:
+    """Find the actual e13 timetable, not an incident/notice attachment."""
+    errors: list[str] = []
+    seen: set[str] = set()
+    likely_changed: list[tuple[int, str, bytes, str]] = []
+
+    for source in SOURCE_PAGES:
+        try:
+            page = fetch(session, source)
+        except Exception as exc:
+            errors.append(f"{source}: {exc}")
+            continue
+
+        candidates = candidate_pdf_urls(page.text, page.url)
+        for score, url in candidates[:40]:
+            if url in seen:
+                continue
+            seen.add(url)
+            try:
+                response = fetch(session, url)
+                content_type = response.headers.get("content-type", "").lower()
+                if not (response.content.startswith(b"%PDF-") or "application/pdf" in content_type):
+                    continue
+                pdf_bytes = response.content
+                try:
+                    parsed = parse_pdf(pdf_bytes)
+                    print(f"PDF de horario e13 validado: {response.url}")
+                    return response.url, pdf_bytes, parsed
+                except Exception as exc:
+                    if looks_like_e13_timetable(pdf_bytes):
+                        likely_changed.append((score, response.url, pdf_bytes, str(exc)))
+                    else:
+                        errors.append(f"Descartado PDF no-horario {response.url}: {exc}")
+            except Exception as exc:
+                errors.append(f"{url}: {exc}")
+
+    if likely_changed:
+        likely_changed.sort(key=lambda item: item[0], reverse=True)
+        _score, url, pdf_bytes, reason = likely_changed[0]
+        raise PendingTimetable(url, pdf_bytes, reason)
+
+    detail = " | ".join(errors[-8:])
+    raise MonitorError("No se ha localizado un PDF de horario e13 válido en Sagalés." + (f" {detail}" if detail else ""))
 
 
 def schedule_hash(data: dict[str, Any]) -> str:
@@ -314,6 +389,23 @@ def save_state(path: Path, state: dict[str, Any]) -> None:
     path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def record_pending(state_path: Path, state: dict[str, Any], pdf_url: str, pdf_bytes: bytes, error: str) -> None:
+    raw_hash = hashlib.sha256(pdf_bytes).hexdigest()
+    new_alert = raw_hash != state.get("pending_pdf_sha256") and raw_hash != state.get("accepted_pdf_sha256")
+    state.update({
+        "pending_pdf_sha256": raw_hash,
+        "pending_pdf_url": pdf_url,
+        "pending_detected_at": now_iso(),
+        "pending_error": error,
+    })
+    save_state(state_path, state)
+    action_output("alert", "true" if new_alert else "false")
+    action_output("status", "pending-review")
+    action_output("updated", "false")
+    action_output("pdf_url", pdf_url)
+    action_output("message", error.replace("\n", " "))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--local-pdf", help="Usa un PDF local para probar el parser")
@@ -325,64 +417,53 @@ def main() -> int:
     data_path = Path(args.data)
     state = load_state(state_path)
 
-    pdf_url = "local-file"
     if args.local_pdf:
+        pdf_url = "local-file"
         pdf_bytes = Path(args.local_pdf).read_bytes()
+        try:
+            parsed = parse_pdf(pdf_bytes)
+        except Exception as exc:
+            record_pending(state_path, state, pdf_url, pdf_bytes, str(exc))
+            return 0
     else:
         session = requests.Session()
         session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "es-ES,es;q=0.9"})
         try:
-            pdf_url, pdf_bytes = discover_pdf(session)
+            pdf_url, pdf_bytes, parsed = discover_timetable(session)
+        except PendingTimetable as exc:
+            record_pending(state_path, state, exc.url, exc.pdf_bytes, exc.reason)
+            print(f"PDF e13 probable pendiente de revisión: {exc.reason}")
+            return 0
         except Exception as exc:
             action_output("status", "error")
             action_output("alert", "false")
+            action_output("updated", "false")
+            action_output("pdf_url", "")
             action_output("message", str(exc).replace("\n", " "))
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
 
     raw_hash = hashlib.sha256(pdf_bytes).hexdigest()
-
-    try:
-        parsed = parse_pdf(pdf_bytes)
-        parsed_hash = schedule_hash(parsed)
-    except Exception as exc:
-        if raw_hash != state.get("pending_pdf_sha256") and raw_hash != state.get("accepted_pdf_sha256"):
-            state.update({
-                "pending_pdf_sha256": raw_hash,
-                "pending_pdf_url": pdf_url,
-                "pending_detected_at": now_iso(),
-                "pending_error": str(exc),
-            })
-            save_state(state_path, state)
-            action_output("alert", "true")
-        else:
-            action_output("alert", "false")
-        action_output("status", "pending-review")
-        action_output("pdf_url", pdf_url)
-        action_output("message", str(exc).replace("\n", " "))
-        print(f"Nuevo PDF no validado: {exc}")
-        return 0
-
+    parsed_hash = schedule_hash(parsed)
     accepted_schedule = state.get("accepted_schedule_sha256") or BASELINE_SCHEDULE_SHA256
 
     if parsed_hash == accepted_schedule:
-        changed_state = raw_hash != state.get("accepted_pdf_sha256") or pdf_url != state.get("accepted_pdf_url")
-        if changed_state:
-            state.update({
-                "accepted_pdf_sha256": raw_hash,
-                "accepted_pdf_url": pdf_url,
-                "accepted_schedule_sha256": parsed_hash,
-                "last_changed_at": state.get("last_changed_at") or now_iso(),
-                "pending_pdf_sha256": None,
-                "pending_pdf_url": None,
-                "pending_detected_at": None,
-                "pending_error": None,
-            })
-            save_state(state_path, state)
+        state.update({
+            "accepted_pdf_sha256": raw_hash,
+            "accepted_pdf_url": pdf_url,
+            "accepted_schedule_sha256": parsed_hash,
+            "last_checked_at": now_iso(),
+            "pending_pdf_sha256": None,
+            "pending_pdf_url": None,
+            "pending_detected_at": None,
+            "pending_error": None,
+        })
+        save_state(state_path, state)
         action_output("status", "unchanged")
         action_output("alert", "false")
         action_output("updated", "false")
         action_output("pdf_url", pdf_url)
+        action_output("message", "Horario oficial sin cambios")
         print("Horario oficial sin cambios.")
         return 0
 
@@ -392,6 +473,7 @@ def main() -> int:
         "accepted_pdf_url": pdf_url,
         "accepted_schedule_sha256": parsed_hash,
         "last_changed_at": now_iso(),
+        "last_checked_at": now_iso(),
         "pending_pdf_sha256": None,
         "pending_pdf_url": None,
         "pending_detected_at": None,
