@@ -9,15 +9,24 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect inline pdfBus implementation
+      - name: Locate pdfBus implementation
         run: |
           python - <<'PY'
           import re, urllib.request
-          u='https://www.sagales.com/es/linia/555'
-          req=urllib.request.Request(u, headers={'User-Agent':'Mozilla/5.0'})
+          from urllib.parse import urljoin
+          page='https://www.sagales.com/es/linia/555'
+          req=urllib.request.Request(page, headers={'User-Agent':'Mozilla/5.0'})
           html=urllib.request.urlopen(req, timeout=30).read().decode('utf-8','replace')
-          print('HTML bytes:',len(html),'pdfBus occurrences:',len(re.findall(r'pdfBus',html,re.I)))
-          for m in re.finditer(r'pdfBus', html, re.I):
-              a=max(0,m.start()-1400); b=min(len(html),m.end()+3000)
-              print('\n--- pdfBus context ---\n'+html[a:b])
+          srcs=re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
+          for src in srcs:
+              u=urljoin(page,src)
+              try:
+                  req=urllib.request.Request(u, headers={'User-Agent':'Mozilla/5.0'})
+                  text=urllib.request.urlopen(req, timeout=20).read().decode('utf-8','replace')
+              except Exception as e:
+                  print('ERR',u,e); continue
+              if re.search(r'pdfBus',text,re.I):
+                  print('\nFOUND',u,'bytes',len(text))
+                  for m in re.finditer(r'pdfBus',text,re.I):
+                      print(text[max(0,m.start()-1200):min(len(text),m.end()+3500)])
           PY
