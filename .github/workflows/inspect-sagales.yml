@@ -9,24 +9,17 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Locate pdfBus implementation
+      - name: Inspect timetable resolver response
         run: |
           python - <<'PY'
-          import re, urllib.request
-          from urllib.parse import urljoin
-          page='https://www.sagales.com/es/linia/555'
-          req=urllib.request.Request(page, headers={'User-Agent':'Mozilla/5.0'})
-          html=urllib.request.urlopen(req, timeout=30).read().decode('utf-8','replace')
-          srcs=re.findall(r'<script[^>]+src=["\']([^"\']+)', html, re.I)
-          for src in srcs:
-              u=urljoin(page,src)
-              try:
-                  req=urllib.request.Request(u, headers={'User-Agent':'Mozilla/5.0'})
-                  text=urllib.request.urlopen(req, timeout=20).read().decode('utf-8','replace')
-              except Exception as e:
-                  print('ERR',u,e); continue
-              if re.search(r'pdfBus',text,re.I):
-                  print('\nFOUND',u,'bytes',len(text))
-                  for m in re.finditer(r'pdfBus',text,re.I):
-                      print(text[max(0,m.start()-1200):min(len(text),m.end()+3500)])
+          import time, urllib.request
+          u='https://www.sagales.com/front/js-nexus/planificador/pdf.php?id=555&ids=-1&idioma=es&nocache='+str(time.time())
+          req=urllib.request.Request(u, headers={'User-Agent':'Mozilla/5.0','Referer':'https://www.sagales.com/es/linia/555'})
+          r=urllib.request.urlopen(req, timeout=30)
+          body=r.read().decode('utf-8','replace')
+          print('URL:',r.geturl())
+          print('CONTENT-TYPE:',r.headers.get('content-type'))
+          print('BODY-BEGIN')
+          print(body[:12000])
+          print('BODY-END')
           PY
