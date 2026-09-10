@@ -69,7 +69,17 @@ function renderTrips() {
   clock.textContent = formatTime(now);
 
   const trips = getUpcomingTrips(now, direction, 5);
-  calendarChip.textContent = getCalendarLabel(now);
+
+  const todayCalendar = getCalendarLabel(now);
+  const tomorrowTrip = trips.find(trip => dayLabel(trip.departureDate, now) === "mañana");
+  if (tomorrowTrip) {
+    const tomorrowCalendar = getCalendarLabel(tomorrowTrip.departureDate);
+    calendarChip.textContent = tomorrowCalendar === todayCalendar
+      ? `Hoy y mañana: ${todayCalendar}`
+      : `Hoy: ${todayCalendar} · Mañana: ${tomorrowCalendar}`;
+  } else {
+    calendarChip.textContent = `Hoy: ${todayCalendar}`;
+  }
 
   if (!HOLIDAY_YEARS.has(now.getFullYear())) {
     calendarWarning.textContent = `Aviso: los festivos automáticos de ${now.getFullYear()} no están cargados; sábados y domingos sí se detectan correctamente.`;
