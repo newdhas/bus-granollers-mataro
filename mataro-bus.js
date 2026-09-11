@@ -5,6 +5,21 @@ const lines = [
   [5,'Rodalies · Hospital de Mataró'],[6,'Institut Català Salut · Ctra. de Mata'],[7,'Pl. Tereses · Cerdanyola'],[8,'Rodalies · Galícia']
 ];
 
+const LINE1_STOPS = [
+  'Rodalies','Ronda Barceló','Plaça Dr. Fleming','President Macià','Sant Valentí','Ed. de Vidre - TecnoCampus',
+  'Institut Català Salut','Gatassa','Rosselló','València','Ronda Cerdanya','Vallès','Ample','Roca Blanca',
+  'Escola El Turó','Euskadi','Irlanda','Parc La Llàntia','Blanes','La Llàntia','Cementiri Les Valls','Mataró Parc',
+  'Hospital de Mataró','El Cargol','Santa Anna','Muralla','Camínet','Parc Central','Cabanellas','Escola Freta',
+  'P. Picasso','Perú','Caputxins','Sant Oleguer','CAP Cirera Molins','Cirera'
+];
+
+const ROSSELLO = {
+  weekday: ['05:36','06:36','06:57','07:06','07:14','07:27','07:39','07:53','08:09','08:18','08:29','08:42','08:55','09:09','09:23','09:36','09:49','10:02','10:15','10:27','10:40','10:53','11:06','11:19','11:32','11:44','11:57','12:10','12:24','12:37','12:50','13:02','13:15','13:28','13:41','13:54','14:07','14:19','14:32','14:45','14:59','15:13','15:27','15:40','15:52','16:04','16:17','16:31','16:45','16:59','17:12','17:25','17:38','17:52','18:06','18:20','18:33','18:45','18:58','19:12','19:26','19:39','19:50','20:03','20:14','20:28','20:45','21:03','21:14','21:27','21:40','21:54','22:09','22:22','22:33','22:46'],
+  saturday: ['06:47','07:23','07:52','08:14','08:38','09:01','09:23','09:46','10:11','10:35','10:59','11:23','11:49','12:14','12:40','13:07','13:33','14:00','14:25','14:50','15:16','15:41','16:06','16:31','16:56','17:21','17:47','18:13','18:40','19:06','19:33','20:01','20:27','20:53','21:16','21:40','22:20'],
+  holiday: ['08:22','08:58','09:30','10:02','10:36','11:10','11:43','12:17','12:53','13:29','14:04','14:40','15:13','15:47','16:20','16:54','17:30','18:04','18:40','19:16','19:53','20:29','21:03','21:36','22:11'],
+  summerWeekday: ['05:41','06:43','07:06','07:18','07:28','07:45','08:00','08:12','08:24','08:36','08:49','09:02','09:15','09:28','09:41','09:54','10:07','10:20','10:33','10:46','10:59','11:13','11:26','11:39','11:52','12:06','12:21','12:35','12:49','13:03','13:17','13:32','13:46','13:58','14:12','14:26','14:39','14:52','15:04','15:17','15:30','15:44','15:57','16:09','16:22','16:36','16:50','17:03','17:16','17:29','17:43','17:57','18:11','18:27','18:41','18:55','19:10','19:25','19:40','19:55','20:10','20:23','20:36','20:49','21:02','21:22','21:42','22:10','22:24']
+};
+
 const root=document.getElementById('urbanLines');
 const detail=document.getElementById('lineDetail');
 const detailTitle=document.getElementById('detailTitle');
@@ -18,6 +33,7 @@ const closeDetail=document.getElementById('closeDetail');
 let summaryData=null;
 let tableData=null;
 let groups=[];
+let currentLine=null;
 
 root.innerHTML=lines.map(([id,name])=>`
   <button class="urban-line" type="button" data-line="${id}">
@@ -39,6 +55,13 @@ function dayType(d){
 function calendarLabel(g){
   const day={weekday:'Laborable',saturday:'Sábado',holiday:'Domingo/festivo'}[g.dayType]||'Horario';
   return `${day} · ${g.season==='summer'?'verano':'invierno'}`;
+}
+function rosselloTimes(group){
+  if(!group) return [];
+  if(group.dayType==='holiday') return ROSSELLO.holiday;
+  if(group.dayType==='saturday') return ROSSELLO.saturday;
+  if(group.season==='summer') return ROSSELLO.summerWeekday;
+  return ROSSELLO.weekday;
 }
 
 function classifyGroup(page,table){
@@ -88,16 +111,43 @@ function autoGroupIndex(){
 
 function renderStops(){
   const group=groups[Number(scheduleSelect.value)||0];
-  stopSelect.innerHTML=(group?.stops||[]).map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
+  if(currentLine===1){
+    stopSelect.innerHTML=LINE1_STOPS.map(name=>`<option value="${name}">${name}${name==='Rosselló'?' · 1024':''}</option>`).join('');
+    const preferred=[...stopSelect.options].find(o=>o.value==='Rosselló');
+    if(preferred) stopSelect.value='Rosselló';
+  }else{
+    stopSelect.innerHTML=(group?.stops||[]).map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
+  }
   renderTimes();
 }
 
 function renderTimes(){
   const group=groups[Number(scheduleSelect.value)||0];
-  const stop=group?.stops?.[Number(stopSelect.value)||0];
-  const times=stop?.times||[];
+  let times=[];
+  let stopName='';
+
+  if(currentLine===1){
+    stopName=stopSelect.value;
+    if(stopName==='Rosselló'){
+      times=rosselloTimes(group);
+    }else{
+      const extracted=(group?.stops||[]).find(s=>s.name.toLowerCase()===stopName.toLowerCase());
+      times=extracted?.times||[];
+    }
+  }else{
+    const stop=group?.stops?.[Number(stopSelect.value)||0];
+    stopName=stop?.name||'';
+    times=stop?.times||[];
+  }
+
   const now=nowMinutes();
   const upcoming=times.filter(t=>minutes(t)>=now).slice(0,5);
+
+  if(!times.length){
+    nextDepartures.innerHTML=`<div class="next-box"><strong>${stopName||'Esta parada'} está en el recorrido oficial</strong><div style="margin-top:6px">El PDF general no publica horas exactas para esta parada. No las voy a estimar.</div></div>`;
+    allTimes.innerHTML='';
+    return;
+  }
 
   if(upcoming.length){
     nextDepartures.innerHTML=`<div class="next-box"><div style="font-size:12px;font-weight:800;letter-spacing:.08em">PRÓXIMAS SALIDAS · ${calendarLabel(group).toUpperCase()}</div><div class="next-time">${upcoming[0]}</div><div style="margin-top:7px;font-weight:700">${upcoming.slice(1).join(' · ')||'Última salida disponible'}</div></div>`;
@@ -108,6 +158,7 @@ function renderTimes(){
 }
 
 async function openLine(id){
+  currentLine=id;
   const line=lines.find(([n])=>n===id);
   detailTitle.textContent=`Línea ${id} · ${line?.[1]||''}`;
   pdfLink.href=`./mataro-bus-official/line-${id}.pdf`;
