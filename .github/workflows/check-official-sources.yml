@@ -23,13 +23,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Check Generalitat GTFS and Sagalés
         run: python3 scripts/check_official_sources.py
 
       - name: Commit status and official snapshot when changed
         run: |
-          if git diff --quiet -- official-status.json official-schedule.json; then
+          if [ -z "$(git status --porcelain -- official-status.json official-schedule.json)" ]; then
             echo 'No source changes.'
             exit 0
           fi
@@ -37,7 +39,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add official-status.json official-schedule.json
           git commit -m 'Update official timetable verification'
-          git push
+          git pull --rebase origin main
+          git push origin main
 
       - name: Open or update alert issue
         env:
