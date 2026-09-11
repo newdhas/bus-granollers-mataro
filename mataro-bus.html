@@ -4,18 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#111827" />
-  <meta name="description" content="Horarios de Mataró Bus dentro de la aplicación." />
+  <meta name="description" content="Horarios oficiales de Mataró Bus dentro de la aplicación." />
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icon.svg" />
   <link rel="stylesheet" href="./styles.css" />
   <title>Mataró Bus</title>
   <style>
     .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 18px}.mode-tabs a{display:block;text-align:center;padding:11px 12px;border-radius:12px;text-decoration:none;font-weight:700;background:#e5e7eb;color:#111827}.mode-tabs a.active{background:#111827;color:white}
-    .urban-grid{display:grid;gap:10px;margin-top:14px}.urban-line{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card,#fff);text-decoration:none;color:inherit;border:1px solid rgba(127,127,127,.18);width:100%;text-align:left}.line-badge{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#8b2c83;color:#fff;font-size:20px;font-weight:800;flex:none}.urban-line strong{display:block}.urban-line span{display:block;font-size:13px;opacity:.7;margin-top:2px}
+    .urban-grid{display:grid;gap:10px;margin-top:14px}.urban-line{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card,#fff);color:inherit;border:1px solid rgba(127,127,127,.18);width:100%;text-align:left}.line-badge{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#8b2c83;color:#fff;font-size:20px;font-weight:800;flex:none}.urban-line strong{display:block}.urban-line span{display:block;font-size:13px;opacity:.7;margin-top:2px}
     .quick-card{margin-top:18px;padding:16px;border-radius:18px;background:#0d6efd;color:white}.urban-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.source-pill{font-size:11px;font-weight:800;border-radius:999px;background:#dcfce7;color:#166534;padding:5px 8px;white-space:nowrap}
     .schedule-panel{margin-top:14px}.schedule-tabs{display:flex;gap:7px;overflow:auto;padding-bottom:4px}.schedule-tabs button{border:0;border-radius:999px;padding:8px 11px;font-weight:700;white-space:nowrap;background:#e5e7eb;color:#111827}.schedule-tabs button.active{background:#8b2c83;color:white}
-    .urban-next{margin-top:12px;padding:18px;border-radius:20px;background:#8b2c83;color:white}.urban-next .time{font-size:48px;font-weight:850;line-height:1}.urban-next .count{font-weight:700;margin-top:5px}.departures{display:grid;gap:8px;margin-top:10px}.departure-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:14px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.departure-row strong{font-size:23px}.departure-row span{font-size:13px;opacity:.72}.hidden{display:none!important}.official-note{font-size:13px;line-height:1.45;opacity:.78}
-    @media (prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}.urban-line,.departure-row{background:#18212d}.schedule-tabs button{background:#26313f;color:#f8fafc}}
+    .urban-next{margin-top:12px;padding:18px;border-radius:20px;background:#8b2c83;color:white}.urban-next .time{font-size:48px;font-weight:850;line-height:1}.urban-next .count{font-weight:700;margin-top:5px}.departures{display:grid;gap:8px;margin-top:10px}.departure-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:14px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.departure-row strong{font-size:23px}.departure-row span{font-size:13px;opacity:.72}.official-note{font-size:13px;line-height:1.45;opacity:.78}
+    .pdf-panel{margin-top:18px;padding:14px;border-radius:18px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.pdf-panel.hidden{display:none}.pdf-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.pdf-head h2{font-size:18px;margin:0}.close-pdf{border:0;border-radius:10px;padding:8px 10px;font-weight:700}.pdf-frame{display:block;width:100%;height:72vh;min-height:520px;border:0;border-radius:12px;background:#fff}.pdf-fallback{font-size:13px;margin-top:8px;opacity:.75}
+    @media (max-width:700px){.pdf-frame{height:68vh;min-height:480px}}
+    @media (prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}.urban-line,.departure-row,.pdf-panel{background:#18212d}.schedule-tabs button{background:#26313f;color:#f8fafc}.close-pdf{background:#26313f;color:#f8fafc}}
   </style>
 </head>
 <body>
@@ -46,14 +48,23 @@
 
     <section class="info-card">
       <strong>Todas las líneas</strong>
-      <p class="official-note">Rosselló 1024 ya funciona totalmente dentro de la app. Las demás líneas se irán cargando con sus horarios oficiales en este mismo formato; no hace falta abrir Avanza para consultar Rosselló.</p>
+      <p class="official-note">Pulsa una línea para abrir su <strong>horario oficial de Avanza dentro de esta misma app</strong>. Los PDFs se guardan en la propia web y se sincronizan automáticamente cada semana.</p>
     </section>
 
     <section class="urban-grid" id="urbanLines"></section>
 
+    <section class="pdf-panel hidden" id="pdfPanel">
+      <div class="pdf-head">
+        <h2 id="pdfTitle">Horario oficial</h2>
+        <button class="close-pdf" id="closePdf" type="button">Cerrar</button>
+      </div>
+      <iframe class="pdf-frame" id="pdfFrame" title="Horario oficial de Mataró Bus"></iframe>
+      <p class="pdf-fallback">Si el visor PDF integrado de tu móvil no se muestra correctamente, mantén pulsado sobre el visor o usa el navegador del sistema. El archivo sigue estando alojado dentro de esta web.</p>
+    </section>
+
     <section class="info-card">
       <strong>Fuente</strong>
-      <p class="official-note">Mataró Bus · Avanza. Para Rosselló se usa el horario oficial publicado en la propia parada, válido desde 15/06/2026. La app conserva también enlaces de contraste con la web oficial.</p>
+      <p class="official-note">Mataró Bus · Avanza. Horarios oficiales de las líneas 1–8 descargados desde la web oficial de Avanza y almacenados en esta aplicación.</p>
       <a class="official-link" href="https://mataro.avanzagrupo.com/lineas-y-horarios/todas-las-lineas" target="_blank" rel="noopener noreferrer">Web oficial Mataró Bus ↗</a>
     </section>
   </main>
