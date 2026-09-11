@@ -1,13 +1,10 @@
 {
   "alert": true,
-  "checked_at": "2026-09-11T08:04:31.648005Z",
-  "error": "RuntimeError('No se han podido identificar ambos sentidos de la e13')",
+  "checked_at": "2026-09-11T08:22:21.752529Z",
+  "error": "RuntimeError(\"No se han podido identificar ambos sentidos de la e13. Viajes detectados: {'toMataro': 0, 'toGranollers': 0}; paradas: {'granollers_bus': ['PF08096019'], 'sant_crist': ['PF08121066'], 'mataro_terminal': ['PF08121079']}\")",
   "gtfs": {
     "url": "https://analisi.transparenciacatalunya.cat/download/bca2-b4i3/application/zip"
   },
-  "message": "Error comprobando fuentes oficiales: No se han podido identificar ambos sentidos de la e13",
-  "sagales": {
-    "url": "https://www.sagales.com/es/lineas/4?origenCL=34&destiCL=65#"
-  },
+  "message": "Error comprobando GTFS oficial: No se han podido identificar ambos sentidos de la e13. Viajes detectados: {'toMataro': 0, 'toGranollers': 0}; paradas: {'granollers_bus': ['PF08096019'], 'sant_crist': ['PF08121066'], 'mataro_terminal': ['PF08121079']}",
   "state": "error"
 }
