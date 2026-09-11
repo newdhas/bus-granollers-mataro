@@ -16,9 +16,14 @@ const LABELS = {weekday:'Laborable', saturday:'Sábado', holiday:'Festivo', summ
 let selected = autoType(new Date());
 
 function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function isSummerWeekday(d){
+  const monthDay=(d.getMonth()+1)*100+d.getDate();
+  return monthDay>=615 && monthDay<=914;
+}
 function autoType(d){
   if(HOLIDAYS.has(dateKey(d)) || d.getDay()===0) return 'holiday';
   if(d.getDay()===6) return 'saturday';
+  if(isSummerWeekday(d)) return 'summerWeekday';
   return 'weekday';
 }
 function minutes(v){const [h,m]=v.split(':').map(Number); return h*60+m}
