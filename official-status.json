@@ -1,0 +1,13 @@
+{
+  "alert": true,
+  "checked_at": "2026-09-11T08:04:31.648005Z",
+  "error": "RuntimeError('No se han podido identificar ambos sentidos de la e13')",
+  "gtfs": {
+    "url": "https://analisi.transparenciacatalunya.cat/download/bca2-b4i3/application/zip"
+  },
+  "message": "Error comprobando fuentes oficiales: No se han podido identificar ambos sentidos de la e13",
+  "sagales": {
+    "url": "https://www.sagales.com/es/lineas/4?origenCL=34&destiCL=65#"
+  },
+  "state": "error"
+}
