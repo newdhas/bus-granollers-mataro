@@ -5,9 +5,10 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
+import urllib3
 from bs4 import BeautifulSoup
 
 BASE = "https://mataro.avanzagrupo.com"
@@ -27,7 +28,11 @@ LINE_NAMES = {
 
 
 def fetch(session: requests.Session, url: str) -> requests.Response:
-    r = session.get(url, timeout=40, allow_redirects=True)
+    # Avanza currently serves an incomplete certificate chain to some automated
+    # clients. Disable CA verification only for this exact official host; all
+    # other hosts keep normal TLS verification.
+    verify = urlparse(url).hostname != "mataro.avanzagrupo.com"
+    r = session.get(url, timeout=40, allow_redirects=True, verify=verify)
     r.raise_for_status()
     return r
 
@@ -67,7 +72,6 @@ def extract_pdf_candidates(page_url: str, html: str, line: int) -> list[tuple[in
         if ".pdf" in url.lower() or "/documents/" in url.lower():
             found.append((score_candidate(url, "", line), url, ""))
 
-    # Preserve highest score per URL.
     best: dict[str, tuple[int, str]] = {}
     for score, url, text in found:
         if url not in best or score > best[url][0]:
@@ -90,7 +94,11 @@ def resolve_line_pdf(session: requests.Session, line: int) -> tuple[str, bytes, 
             errors.append(f"{page}: {exc}")
             continue
 
-        for _score, url, label in extract_pdf_candidates(resp.url, resp.text, line):
+        candidates = extract_pdf_candidates(resp.url, resp.text, line)
+        if not candidates:
+            errors.append(f"{page}: página accesible, sin enlace PDF detectable")
+
+        for _score, url, label in candidates:
             try:
                 pdf = fetch(session, url)
             except Exception as exc:
@@ -102,11 +110,12 @@ def resolve_line_pdf(session: requests.Session, line: int) -> tuple[str, bytes, 
 
     raise RuntimeError(
         f"Línea {line}: no se ha encontrado un PDF oficial descargable. "
-        + " | ".join(errors[-6:])
+        + " | ".join(errors[-8:])
     )
 
 
 def main() -> int:
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     session = requests.Session()
     session.headers.update({"User-Agent": UA, "Accept-Language": "ca,es;q=0.9,en;q=0.6"})
     OUT_DIR.mkdir(exist_ok=True)
