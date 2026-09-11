@@ -52,12 +52,31 @@ root.innerHTML=lines.map(([id,name])=>`
     <span style="min-width:0"><strong>Línea ${id}</strong><span>${name}</span></span>
     <span style="margin-left:auto;font-size:20px;opacity:.45">›</span>
   </button>`).join('');
+
+const pdfPanel=document.getElementById('pdfPanel');
+const pdfFrame=document.getElementById('pdfFrame');
+const pdfTitle=document.getElementById('pdfTitle');
+const closePdf=document.getElementById('closePdf');
+
+function openLinePdf(id){
+  const line=lines.find(([lineId])=>lineId===id);
+  if(!line)return;
+  const [,name]=line;
+  pdfTitle.textContent=`Línea ${id} · ${name}`;
+  pdfFrame.src=`./mataro-bus-official/line-${id}.pdf#view=FitH`;
+  pdfPanel.classList.remove('hidden');
+  pdfPanel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeLinePdf(){
+  pdfFrame.src='about:blank';
+  pdfPanel.classList.add('hidden');
+}
+
 root.addEventListener('click',e=>{
   const b=e.target.closest('[data-line]'); if(!b)return;
-  const id=Number(b.dataset.line);
-  if(id===1){document.getElementById('rosselloPanel').scrollIntoView({behavior:'smooth'});return;}
-  alert(`La línea ${id} ya está identificada. Estoy incorporando sus horarios oficiales para que se consulten aquí igual que Rosselló.`);
+  openLinePdf(Number(b.dataset.line));
 });
+closePdf.addEventListener('click',closeLinePdf);
 
 function tick(){document.getElementById('urbanClock').textContent=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});renderSchedule();}
 tick(); setInterval(tick,30000);
