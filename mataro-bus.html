@@ -12,9 +12,10 @@
   <style>
     .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 18px}.mode-tabs a{display:block;text-align:center;padding:11px 12px;border-radius:12px;text-decoration:none;font-weight:700;background:#e5e7eb;color:#111827}.mode-tabs a.active{background:#111827;color:#fff}
     .urban-grid{display:grid;gap:10px;margin-top:14px}.urban-line{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card,#fff);color:inherit;border:1px solid rgba(127,127,127,.18);width:100%;text-align:left}.line-badge{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#8b2c83;color:#fff;font-size:20px;font-weight:800;flex:none}.urban-line strong{display:block}.urban-line span{display:block;font-size:13px;opacity:.72;margin-top:2px}
+    .calendar-global{margin:14px 0;padding:14px;border-radius:16px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.calendar-global select{width:100%;margin-top:8px;padding:11px;border-radius:12px;border:1px solid rgba(127,127,127,.25);background:inherit;color:inherit;font-weight:700}
     .detail{margin-top:18px;padding:16px;border-radius:18px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.hidden{display:none!important}.detail-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.detail h2{margin:0;font-size:21px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.controls select,.pdf-btn{width:100%;padding:11px;border-radius:12px;border:1px solid rgba(127,127,127,.25);background:inherit;color:inherit;font-weight:700}.next-box{padding:16px;border-radius:16px;background:#8b2c83;color:#fff}.next-time{font-size:44px;font-weight:850;line-height:1}.times{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.time-chip{padding:8px 10px;border-radius:999px;background:#e5e7eb;color:#111827;font-weight:700;font-size:14px}.pdf-link{display:inline-block;margin-top:14px;text-decoration:none;font-weight:700}.official-note{font-size:13px;line-height:1.45;opacity:.78}
     @media(max-width:620px){.controls{grid-template-columns:1fr}}
-    @media(prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}.urban-line,.detail{background:#18212d}.time-chip{background:#26313f;color:#f8fafc}}
+    @media(prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}.urban-line,.detail,.calendar-global{background:#18212d}.time-chip{background:#26313f;color:#f8fafc}}
   </style>
 </head>
 <body>
@@ -22,12 +23,23 @@
     <header class="topbar"><div><p class="eyebrow">Mataró Bus</p><h1>Horarios</h1></div><div class="clock" id="urbanClock">--:--</div></header>
     <nav class="mode-tabs"><a href="./index.html">e13</a><a class="active" href="./mataro-bus.html">Mataró Bus</a></nav>
 
-    <section class="info-card"><strong>Líneas 1–8</strong><p class="official-note">Pulsa una línea. Verás sus paradas, horarios y próximas salidas sin salir de la app.</p></section>
+    <section class="calendar-global">
+      <strong>Calendario para todas las líneas</strong>
+      <select id="globalCalendar" aria-label="Calendario global">
+        <option value="auto">Automático según hoy</option>
+        <option value="weekday">Laborable</option>
+        <option value="saturday">Sábado</option>
+        <option value="holiday">Domingo / festivo</option>
+      </select>
+      <p class="official-note" id="globalCalendarInfo" style="margin-bottom:0"></p>
+    </section>
+
+    <section class="info-card"><strong>Líneas 1–8</strong><p class="official-note">Pulsa una línea. Dentro eliges sentido y parada. El tipo de día se aplica a todas las líneas desde el selector superior.</p></section>
     <section class="urban-grid" id="urbanLines"></section>
 
     <section class="detail hidden" id="lineDetail">
       <div class="detail-head"><div><span class="source-pill">OFICIAL</span><h2 id="detailTitle">Línea</h2></div><button id="closeDetail" class="pdf-btn" style="width:auto">Cerrar</button></div>
-      <div class="controls"><select id="scheduleSelect" aria-label="Horario"></select><select id="stopSelect" aria-label="Parada"></select></div>
+      <div class="controls"><select id="scheduleSelect" aria-label="Sentido"></select><select id="stopSelect" aria-label="Parada"></select></div>
       <div id="nextDepartures"></div>
       <div class="times" id="allTimes"></div>
       <a id="pdfLink" class="official-link pdf-link" target="_blank" rel="noopener noreferrer">Ver PDF oficial ↗</a>
