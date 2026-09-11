@@ -1,75 +1,27 @@
-name: Check official timetable sources
+name: Diagnostic check of Generalitat GTFS
 
+# This GTFS parser is kept only as a manual diagnostic source.
+# The production timetable auto-update is handled by monitor-timetable.yml,
+# which parses and validates the official Sagalés e13 PDF every 6 hours.
 on:
-  schedule:
-    - cron: '17 */6 * * *'
   workflow_dispatch:
-  push:
-    paths:
-      - 'scripts/check_official_sources_v2.py'
-      - '.github/workflows/check-official-sources.yml'
 
 permissions:
-  contents: write
-  issues: write
-
-concurrency:
-  group: official-timetable-check
-  cancel-in-progress: true
+  contents: read
 
 jobs:
-  check:
+  diagnostic:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
-      - name: Check Generalitat GTFS against verified timetable
+      - name: Run Generalitat GTFS diagnostic
         run: python3 scripts/check_official_sources_v2.py
 
-      - name: Commit status and official snapshot when changed
-        run: |
-          files=()
-          for f in official-status.json official-schedule.json; do
-            if [ -e "$f" ]; then
-              files+=("$f")
-            fi
-          done
-          if [ ${#files[@]} -eq 0 ] || [ -z "$(git status --porcelain -- "${files[@]}")" ]; then
-            echo 'No source changes.'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- "${files[@]}"
-          git commit -m 'Update official timetable verification'
-          git pull --rebase origin main
-          git push origin main
-
-      - name: Open or update alert issue
+      - name: Write summary
         if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ ! -f official-status.json ]; then
-            echo 'No official-status.json generated.'
-            exit 1
-          fi
-          ALERT=$(python3 -c "import json; print('true' if json.load(open('official-status.json')).get('alert') else 'false')")
-          STATE=$(python3 -c "import json; print(json.load(open('official-status.json')).get('state','unknown'))")
-          MESSAGE=$(python3 -c "import json; print(json.load(open('official-status.json')).get('message',''))")
-          TITLE='Aviso horario oficial e13'
-          EXISTING=$(gh issue list --state open --search "${TITLE} in:title" --json number --jq '.[0].number // empty')
-
-          if [ "$ALERT" = 'true' ]; then
-            BODY="Comprobación automática de fuentes oficiales.\n\n**Estado:** ${STATE}\n\n${MESSAGE}\n\nRevisa \`official-status.json\` para el detalle de la comparación GTFS/PDF."
-            if [ -n "$EXISTING" ]; then
-              gh issue edit "$EXISTING" --body "$BODY"
-            else
-              gh issue create --title "$TITLE" --body "$BODY"
-            fi
-          elif [ -n "$EXISTING" ]; then
-            gh issue close "$EXISTING" --comment 'Las fuentes oficiales vuelven a coincidir con el horario verificado.'
-          fi
+          echo "### Diagnóstico GTFS e13" >> "$GITHUB_STEP_SUMMARY"
+          echo "Este workflow no modifica horarios ni abre incidencias automáticamente." >> "$GITHUB_STEP_SUMMARY"
+          echo "La actualización automática de producción usa el PDF oficial de Sagalés mediante monitor-timetable.yml." >> "$GITHUB_STEP_SUMMARY"
