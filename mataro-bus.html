@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="Acceso rápido a líneas, paradas y horarios oficiales de Mataró Bus." />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>Mataró Bus</title>
+  <style>
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 18px}.mode-tabs a{display:block;text-align:center;padding:11px 12px;border-radius:12px;text-decoration:none;font-weight:700;background:#e5e7eb;color:#111827}.mode-tabs a.active{background:#111827;color:white}.urban-grid{display:grid;gap:10px;margin-top:14px}.urban-line{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card,#fff);text-decoration:none;color:inherit;border:1px solid rgba(127,127,127,.18)}.line-badge{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#8b2c83;color:#fff;font-size:20px;font-weight:800;flex:none}.urban-line strong{display:block}.urban-line span{display:block;font-size:13px;opacity:.7;margin-top:2px}.quick-card{margin-top:18px;padding:16px;border-radius:18px;background:#0d6efd;color:white}.quick-card a{color:white;font-weight:800}.official-note{font-size:13px;line-height:1.45;opacity:.78}.urban-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.live-pill{font-size:11px;font-weight:800;border-radius:999px;background:#dcfce7;color:#166534;padding:5px 8px;white-space:nowrap}
+    @media (prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}.urban-line{background:#18212d}}
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Mataró Bus · Avanza</p>
+        <h1>Líneas y horarios</h1>
+      </div>
+      <div class="clock" id="urbanClock">--:--</div>
+    </header>
+
+    <nav class="mode-tabs" aria-label="Tipo de autobús">
+      <a href="./index.html">e13</a>
+      <a class="active" href="./mataro-bus.html">Mataró Bus</a>
+    </nav>
+
+    <section class="quick-card">
+      <div class="urban-head">
+        <div><strong>Rosselló · parada 1024</strong><div style="margin-top:4px">Línea 1 Circular</div></div>
+        <span class="live-pill">TIEMPO REAL</span>
+      </div>
+      <p style="margin:12px 0 8px">La parada de tu foto. Consulta las próximas llegadas directamente en la fuente oficial.</p>
+      <a href="https://mataro.avanzagrupo.com/ca/detalleparada?busStop=1024&busline=1" target="_blank" rel="noopener noreferrer">Ver próximas salidas ↗</a>
+    </section>
+
+    <section class="info-card">
+      <strong>8 líneas urbanas</strong>
+      <p class="official-note">Selecciona una línea para abrir su ficha oficial de Avanza, donde puedes elegir trayecto, parada y consultar horarios teóricos. La web oficial también muestra tiempos de llegada en tiempo real por parada.</p>
+    </section>
+
+    <section class="urban-grid" id="urbanLines"></section>
+
+    <section class="info-card">
+      <strong>Fuentes oficiales</strong>
+      <p class="official-note">Operador: Avanza · Mataró Bus. El NAP del Ministerio publica además el GTFS oficial de Mataró Bus (8 líneas, paradas, viajes y calendarios), aunque su descarga requiere inicio de sesión.</p>
+      <a class="official-link" href="https://mataro.avanzagrupo.com/lineas-y-horarios/todas-las-lineas" target="_blank" rel="noopener noreferrer">Todas las líneas en Avanza ↗</a><br><br>
+      <a class="official-link" href="https://nap.transportes.gob.es/Files/Detail/972" target="_blank" rel="noopener noreferrer">GTFS oficial en NAP ↗</a>
+    </section>
+  </main>
+  <script type="module" src="./mataro-bus.js"></script>
+</body>
+</html>
