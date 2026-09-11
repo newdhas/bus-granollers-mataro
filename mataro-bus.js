@@ -13,7 +13,7 @@ const LINE1_STOPS = [
   'P. Picasso','Perú','Caputxins','Sant Oleguer','CAP Cirera Molins','Cirera'
 ];
 
-const ROSSELLO = {
+const ROSSELLO_1024 = {
   weekday: ['05:36','06:36','06:57','07:06','07:14','07:27','07:39','07:53','08:09','08:18','08:29','08:42','08:55','09:09','09:23','09:36','09:49','10:02','10:15','10:27','10:40','10:53','11:06','11:19','11:32','11:44','11:57','12:10','12:24','12:37','12:50','13:02','13:15','13:28','13:41','13:54','14:07','14:19','14:32','14:45','14:59','15:13','15:27','15:40','15:52','16:04','16:17','16:31','16:45','16:59','17:12','17:25','17:38','17:52','18:06','18:20','18:33','18:45','18:58','19:12','19:26','19:39','19:50','20:03','20:14','20:28','20:45','21:03','21:14','21:27','21:40','21:54','22:09','22:22','22:33','22:46'],
   saturday: ['06:47','07:23','07:52','08:14','08:38','09:01','09:23','09:46','10:11','10:35','10:59','11:23','11:49','12:14','12:40','13:07','13:33','14:00','14:25','14:50','15:16','15:41','16:06','16:31','16:56','17:21','17:47','18:13','18:40','19:06','19:33','20:01','20:27','20:53','21:16','21:40','22:20'],
   holiday: ['08:22','08:58','09:30','10:02','10:36','11:10','11:43','12:17','12:53','13:29','14:04','14:40','15:13','15:47','16:20','16:54','17:30','18:04','18:40','19:16','19:53','20:29','21:03','21:36','22:11'],
@@ -51,7 +51,7 @@ function selectedSeason(){return isSummer(new Date())?'summer':'winter'}
 function dayLabel(type){return {weekday:'Laborable',saturday:'Sábado',holiday:'Domingo/festivo'}[type]||'Horario'}
 function updateGlobalInfo(){const type=selectedDayType();globalCalendarInfo.textContent=`Aplicando ${dayLabel(type).toLowerCase()} · ${selectedSeason()==='summer'?'verano':'invierno'} a todas las líneas.`}
 
-function rosselloTimes(group){if(!group)return[];if(group.dayType==='holiday')return ROSSELLO.holiday;if(group.dayType==='saturday')return ROSSELLO.saturday;if(group.season==='summer')return ROSSELLO.summerWeekday;return ROSSELLO.weekday}
+function rossello1024Times(group){if(!group)return[];if(group.dayType==='holiday')return ROSSELLO_1024.holiday;if(group.dayType==='saturday')return ROSSELLO_1024.saturday;if(group.season==='summer')return ROSSELLO_1024.summerWeekday;return ROSSELLO_1024.weekday}
 
 function classifyGroup(page,table){const [x1,y1]=table.bbox||[0,0];let type='weekday';if(x1>=390&&y1<300)type='saturday';else if(x1>=390&&y1>=300)type='holiday';return {dayType:type,season:page>=3?'summer':'winter'}}
 
@@ -68,10 +68,8 @@ function extractGroups(summaryLine,rawLine){
   return out;
 }
 
-function directionLabel(g,i){
-  if(currentLine===1)return g.table%2===0?'Dirección Hospital de Mataró':'Dirección Rodalies';
-  return `Sentido ${i+1}`;
-}
+function directionKey(g){if(currentLine===1)return g.table%2===0?'hospital':'rodalies';return String(g.table)}
+function directionLabel(g,i){if(currentLine===1)return directionKey(g)==='hospital'?'Dirección Hospital de Mataró':'Dirección Rodalies';return `Sentido ${i+1}`}
 
 function applyCalendar(){
   updateGlobalInfo();
@@ -87,20 +85,34 @@ function applyCalendar(){
 function renderStops(){
   const group=visibleGroups[Number(scheduleSelect.value)||0];
   if(currentLine===1){
-    stopSelect.innerHTML=LINE1_STOPS.map(name=>`<option value="${name}">${name}${name==='Rosselló'?' · 1024':''}</option>`).join('');
-    if([...stopSelect.options].some(o=>o.value==='Rosselló'))stopSelect.value='Rosselló';
+    const direction=directionKey(group);
+    const ordered=direction==='hospital'?LINE1_STOPS:[...LINE1_STOPS].reverse();
+    stopSelect.innerHTML=ordered.map(name=>`<option value="${name}">${name}${name==='Rosselló'&&direction==='hospital'?' · 1024':''}</option>`).join('');
+    const preferred=[...stopSelect.options].find(o=>o.value==='Rosselló');
+    if(preferred)stopSelect.value='Rosselló';
   }else stopSelect.innerHTML=(group?.stops||[]).map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
   renderTimes();
 }
 
 function renderTimes(){
   const group=visibleGroups[Number(scheduleSelect.value)||0];let times=[],stopName='';
-  if(currentLine===1){stopName=stopSelect.value;if(stopName==='Rosselló')times=rosselloTimes(group);else{const extracted=(group?.stops||[]).find(s=>s.name.toLowerCase()===stopName.toLowerCase());times=extracted?.times||[]}}
-  else{const stop=group?.stops?.[Number(stopSelect.value)||0];stopName=stop?.name||'';times=stop?.times||[]}
+  if(currentLine===1){
+    stopName=stopSelect.value;
+    const direction=directionKey(group);
+    const extracted=(group?.stops||[]).find(s=>s.name.toLowerCase()===stopName.toLowerCase());
+    if(stopName==='Rosselló'&&direction==='hospital')times=rossello1024Times(group);
+    else times=extracted?.times||[];
+  }else{
+    const stop=group?.stops?.[Number(stopSelect.value)||0];stopName=stop?.name||'';times=stop?.times||[];
+  }
   const upcoming=times.filter(t=>minutes(t)>=nowMinutes()).slice(0,5);
-  if(!times.length){nextDepartures.innerHTML=`<div class="next-box"><strong>${stopName||'Esta parada'} está en el recorrido oficial</strong><div style="margin-top:6px">No hay horas exactas publicadas para esta parada en el bloque disponible.</div></div>`;allTimes.innerHTML='';return}
-  if(upcoming.length)nextDepartures.innerHTML=`<div class="next-box"><div style="font-size:12px;font-weight:800;letter-spacing:.08em">PRÓXIMAS SALIDAS · ${dayLabel(group.dayType).toUpperCase()}</div><div class="next-time">${upcoming[0]}</div><div style="margin-top:7px;font-weight:700">${upcoming.slice(1).join(' · ')||'Última salida disponible'}</div></div>`;
-  else nextDepartures.innerHTML=`<div class="next-box"><strong>No quedan salidas posteriores</strong></div>`;
+  if(!times.length){
+    const dir=group?directionLabel(group,Number(scheduleSelect.value)||0):'';
+    nextDepartures.innerHTML=`<div class="next-box"><strong>${stopName||'Esta parada'} · ${dir}</strong><div style="margin-top:6px">No hay horas exactas publicadas para esta combinación de parada y sentido.</div></div>`;
+    allTimes.innerHTML='';return;
+  }
+  if(upcoming.length)nextDepartures.innerHTML=`<div class="next-box"><div style="font-size:12px;font-weight:800;letter-spacing:.08em">PRÓXIMAS SALIDAS · ${directionLabel(group,Number(scheduleSelect.value)||0).toUpperCase()}</div><div class="next-time">${upcoming[0]}</div><div style="margin-top:7px;font-weight:700">${upcoming.slice(1).join(' · ')||'Última salida disponible'}</div></div>`;
+  else nextDepartures.innerHTML=`<div class="next-box"><strong>No quedan salidas posteriores</strong><div style="margin-top:6px">${directionLabel(group,Number(scheduleSelect.value)||0)}</div></div>`;
   allTimes.innerHTML=times.map(t=>`<span class="time-chip">${t}</span>`).join('');
 }
 
