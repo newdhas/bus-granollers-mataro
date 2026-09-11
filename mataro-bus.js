@@ -13,8 +13,8 @@ const allTimes=document.getElementById('allTimes');
 const pdfLink=document.getElementById('pdfLink');
 const closeDetail=document.getElementById('closeDetail');
 
-let data=null;
-let currentLine=null;
+let summaryData=null;
+let tableData=null;
 let groups=[];
 
 root.innerHTML=lines.map(([id,name])=>`
@@ -26,50 +26,57 @@ root.innerHTML=lines.map(([id,name])=>`
 
 function minutes(v){const [h,m]=v.split(':').map(Number);return h*60+m}
 function nowMinutes(){const d=new Date();return d.getHours()*60+d.getMinutes()}
+function findTimes(value){return typeof value==='string' ? (value.match(/\b\d{2}:\d{2}\b/g)||[]) : []}
 
-function extractGroups(lineData){
+function extractGroups(summaryLine,rawLine){
   const out=[];
-  for(const page of lineData||[]){
+  for(const page of summaryLine||[]){
     for(const table of page.tables||[]){
-      const stops=(table.pairs||[]).filter(p=>Array.isArray(p.first)&&Array.isArray(p.last));
-      if(!stops.length) continue;
-      out.push({page:page.page,table:table.index,stops});
+      const rawPage=(rawLine||[]).find(p=>p.page===page.page);
+      const rawTable=rawPage?.tables?.find(t=>t.index===table.index);
+      if(!rawTable?.data?.length || !table.pairs?.length) continue;
+
+      const cols=rawTable.cols||Math.max(...rawTable.data.map(r=>r.length));
+      const timeCols=[];
+      for(let c=0;c<cols;c++){
+        const times=[];
+        for(const row of rawTable.data) times.push(...findTimes(row[c]));
+        const unique=[...new Set(times)].sort((a,b)=>minutes(a)-minutes(b));
+        if(unique.length>=2) timeCols.push(unique);
+      }
+
+      const stops=table.pairs.map((p,i)=>({
+        name:p.name||p.raw_name||`Parada ${i+1}`,
+        times:timeCols[i]||[]
+      })).filter(s=>s.times.length);
+      if(stops.length) out.push({page:page.page,table:table.index,stops});
     }
   }
   return out;
 }
 
-function stopTimes(stop){
-  const values=[];
-  if(Array.isArray(stop.times)) values.push(...stop.times);
-  if(Array.isArray(stop.first)) values.push(...stop.first);
-  if(Array.isArray(stop.last)) values.push(...stop.last);
-  return [...new Set(values.filter(v=>/^\d{2}:\d{2}$/.test(v)))].sort((a,b)=>minutes(a)-minutes(b));
-}
-
 function renderStops(){
   const group=groups[Number(scheduleSelect.value)||0];
-  stopSelect.innerHTML=(group?.stops||[]).map((s,i)=>`<option value="${i}">${s.name||s.raw_name||`Parada ${i+1}`}</option>`).join('');
+  stopSelect.innerHTML=(group?.stops||[]).map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
   renderTimes();
 }
 
 function renderTimes(){
   const group=groups[Number(scheduleSelect.value)||0];
   const stop=group?.stops?.[Number(stopSelect.value)||0];
-  const times=stopTimes(stop||{});
+  const times=stop?.times||[];
   const now=nowMinutes();
   const upcoming=times.filter(t=>minutes(t)>=now).slice(0,5);
 
   if(upcoming.length){
     nextDepartures.innerHTML=`<div class="next-box"><div style="font-size:12px;font-weight:800;letter-spacing:.08em">PRÓXIMAS SALIDAS</div><div class="next-time">${upcoming[0]}</div><div style="margin-top:7px;font-weight:700">${upcoming.slice(1).join(' · ')||'Última salida disponible'}</div></div>`;
   }else{
-    nextDepartures.innerHTML=`<div class="next-box"><strong>No quedan horas posteriores en este bloque</strong></div>`;
+    nextDepartures.innerHTML=`<div class="next-box"><strong>No quedan salidas posteriores en este horario</strong></div>`;
   }
   allTimes.innerHTML=times.map(t=>`<span class="time-chip">${t}</span>`).join('');
 }
 
 async function openLine(id){
-  currentLine=id;
   const line=lines.find(([n])=>n===id);
   detailTitle.textContent=`Línea ${id} · ${line?.[1]||''}`;
   pdfLink.href=`./mataro-bus-official/line-${id}.pdf`;
@@ -79,12 +86,15 @@ async function openLine(id){
   detail.scrollIntoView({behavior:'smooth',block:'start'});
 
   try{
-    if(!data){
-      const r=await fetch('./mataro-bus-table-summary.json',{cache:'no-store'});
-      if(!r.ok) throw new Error('No se pudo cargar el horario');
-      data=await r.json();
+    if(!summaryData || !tableData){
+      const [summaryRes,tableRes]=await Promise.all([
+        fetch('./mataro-bus-table-summary.json',{cache:'no-store'}),
+        fetch('./mataro-bus-tables.json',{cache:'no-store'})
+      ]);
+      if(!summaryRes.ok || !tableRes.ok) throw new Error('No se pudo cargar el horario');
+      [summaryData,tableData]=await Promise.all([summaryRes.json(),tableRes.json()]);
     }
-    groups=extractGroups(data[String(id)]);
+    groups=extractGroups(summaryData[String(id)],tableData[String(id)]);
     if(!groups.length) throw new Error('Sin datos extraídos');
     scheduleSelect.innerHTML=groups.map((g,i)=>`<option value="${i}">Horario ${i+1} · pág. ${g.page}</option>`).join('');
     renderStops();
