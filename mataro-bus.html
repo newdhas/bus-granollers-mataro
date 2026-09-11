@@ -10,63 +10,30 @@
   <link rel="stylesheet" href="./styles.css" />
   <title>Mataró Bus</title>
   <style>
-    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 18px}.mode-tabs a{display:block;text-align:center;padding:11px 12px;border-radius:12px;text-decoration:none;font-weight:700;background:#e5e7eb;color:#111827}.mode-tabs a.active{background:#111827;color:white}
-    .urban-grid{display:grid;gap:10px;margin-top:14px}.urban-line{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card,#fff);color:inherit;border:1px solid rgba(127,127,127,.18);width:100%;text-align:left}.line-badge{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#8b2c83;color:#fff;font-size:20px;font-weight:800;flex:none}.urban-line strong{display:block}.urban-line span{display:block;font-size:13px;opacity:.7;margin-top:2px}
-    .quick-card{margin-top:18px;padding:16px;border-radius:18px;background:#0d6efd;color:white}.urban-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.source-pill{font-size:11px;font-weight:800;border-radius:999px;background:#dcfce7;color:#166534;padding:5px 8px;white-space:nowrap}
-    .schedule-panel{margin-top:14px}.schedule-tabs{display:flex;gap:7px;overflow:auto;padding-bottom:4px}.schedule-tabs button{border:0;border-radius:999px;padding:8px 11px;font-weight:700;white-space:nowrap;background:#e5e7eb;color:#111827}.schedule-tabs button.active{background:#8b2c83;color:white}
-    .urban-next{margin-top:12px;padding:18px;border-radius:20px;background:#8b2c83;color:white}.urban-next .time{font-size:48px;font-weight:850;line-height:1}.urban-next .count{font-weight:700;margin-top:5px}.departures{display:grid;gap:8px;margin-top:10px}.departure-row{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:14px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.departure-row strong{font-size:23px}.departure-row span{font-size:13px;opacity:.72}.official-note{font-size:13px;line-height:1.45;opacity:.78}
-    .pdf-panel{margin-top:18px;padding:14px;border-radius:18px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.pdf-panel.hidden{display:none}.pdf-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.pdf-head h2{font-size:18px;margin:0}.close-pdf{border:0;border-radius:10px;padding:8px 10px;font-weight:700}.pdf-frame{display:block;width:100%;height:72vh;min-height:520px;border:0;border-radius:12px;background:#fff}.pdf-fallback{font-size:13px;margin-top:8px;opacity:.75}
-    @media (max-width:700px){.pdf-frame{height:68vh;min-height:480px}}
-    @media (prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}.urban-line,.departure-row,.pdf-panel{background:#18212d}.schedule-tabs button{background:#26313f;color:#f8fafc}.close-pdf{background:#26313f;color:#f8fafc}}
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 18px}.mode-tabs a{display:block;text-align:center;padding:11px 12px;border-radius:12px;text-decoration:none;font-weight:700;background:#e5e7eb;color:#111827}.mode-tabs a.active{background:#111827;color:#fff}
+    .urban-grid{display:grid;gap:10px;margin-top:14px}.urban-line{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--card,#fff);color:inherit;border:1px solid rgba(127,127,127,.18);width:100%;text-align:left}.line-badge{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#8b2c83;color:#fff;font-size:20px;font-weight:800;flex:none}.urban-line strong{display:block}.urban-line span{display:block;font-size:13px;opacity:.72;margin-top:2px}
+    .detail{margin-top:18px;padding:16px;border-radius:18px;background:var(--card,#fff);border:1px solid rgba(127,127,127,.18)}.hidden{display:none!important}.detail-head{display:flex;justify-content:space-between;gap:12px;align-items:center}.detail h2{margin:0;font-size:21px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.controls select,.pdf-btn{width:100%;padding:11px;border-radius:12px;border:1px solid rgba(127,127,127,.25);background:inherit;color:inherit;font-weight:700}.next-box{padding:16px;border-radius:16px;background:#8b2c83;color:#fff}.next-time{font-size:44px;font-weight:850;line-height:1}.times{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.time-chip{padding:8px 10px;border-radius:999px;background:#e5e7eb;color:#111827;font-weight:700;font-size:14px}.pdf-link{display:inline-block;margin-top:14px;text-decoration:none;font-weight:700}.official-note{font-size:13px;line-height:1.45;opacity:.78}
+    @media(max-width:620px){.controls{grid-template-columns:1fr}}
+    @media(prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}.urban-line,.detail{background:#18212d}.time-chip{background:#26313f;color:#f8fafc}}
   </style>
 </head>
 <body>
   <main class="app-shell">
-    <header class="topbar">
-      <div><p class="eyebrow">Mataró Bus</p><h1>Próximo bus</h1></div>
-      <div class="clock" id="urbanClock">--:--</div>
-    </header>
+    <header class="topbar"><div><p class="eyebrow">Mataró Bus</p><h1>Horarios</h1></div><div class="clock" id="urbanClock">--:--</div></header>
+    <nav class="mode-tabs"><a href="./index.html">e13</a><a class="active" href="./mataro-bus.html">Mataró Bus</a></nav>
 
-    <nav class="mode-tabs" aria-label="Tipo de autobús">
-      <a href="./index.html">e13</a>
-      <a class="active" href="./mataro-bus.html">Mataró Bus</a>
-    </nav>
-
-    <section class="quick-card">
-      <div class="urban-head">
-        <div><strong>Rosselló · parada 1024</strong><div style="margin-top:4px">Línea 1 Circular</div></div>
-        <span class="source-pill">HORARIO EN APP</span>
-      </div>
-      <p style="margin:12px 0 0">Horario del cartel oficial de Mataró Bus · válido desde 15/06/2026.</p>
-    </section>
-
-    <section class="schedule-panel" id="rosselloPanel">
-      <div class="schedule-tabs" id="scheduleTabs"></div>
-      <div id="urbanNext"></div>
-      <div class="departures" id="urbanDepartures"></div>
-    </section>
-
-    <section class="info-card">
-      <strong>Todas las líneas</strong>
-      <p class="official-note">Pulsa una línea para abrir su <strong>horario oficial de Avanza dentro de esta misma app</strong>. Los PDFs se guardan en la propia web y se sincronizan automáticamente cada semana.</p>
-    </section>
-
+    <section class="info-card"><strong>Líneas 1–8</strong><p class="official-note">Pulsa una línea. Verás sus paradas, horarios y próximas salidas sin salir de la app.</p></section>
     <section class="urban-grid" id="urbanLines"></section>
 
-    <section class="pdf-panel hidden" id="pdfPanel">
-      <div class="pdf-head">
-        <h2 id="pdfTitle">Horario oficial</h2>
-        <button class="close-pdf" id="closePdf" type="button">Cerrar</button>
-      </div>
-      <iframe class="pdf-frame" id="pdfFrame" title="Horario oficial de Mataró Bus"></iframe>
-      <p class="pdf-fallback">Si el visor PDF integrado de tu móvil no se muestra correctamente, mantén pulsado sobre el visor o usa el navegador del sistema. El archivo sigue estando alojado dentro de esta web.</p>
+    <section class="detail hidden" id="lineDetail">
+      <div class="detail-head"><div><span class="source-pill">OFICIAL</span><h2 id="detailTitle">Línea</h2></div><button id="closeDetail" class="pdf-btn" style="width:auto">Cerrar</button></div>
+      <div class="controls"><select id="scheduleSelect" aria-label="Horario"></select><select id="stopSelect" aria-label="Parada"></select></div>
+      <div id="nextDepartures"></div>
+      <div class="times" id="allTimes"></div>
+      <a id="pdfLink" class="official-link pdf-link" target="_blank" rel="noopener noreferrer">Ver PDF oficial ↗</a>
     </section>
 
-    <section class="info-card">
-      <strong>Fuente</strong>
-      <p class="official-note">Mataró Bus · Avanza. Horarios oficiales de las líneas 1–8 descargados desde la web oficial de Avanza y almacenados en esta aplicación.</p>
-      <a class="official-link" href="https://mataro.avanzagrupo.com/lineas-y-horarios/todas-las-lineas" target="_blank" rel="noopener noreferrer">Web oficial Mataró Bus ↗</a>
-    </section>
+    <section class="info-card"><strong>Fuente</strong><p class="official-note">Mataró Bus · Avanza. Datos extraídos de los PDFs oficiales sincronizados en esta aplicación.</p><a class="official-link" href="https://mataro.avanzagrupo.com/lineas-y-horarios/todas-las-lineas" target="_blank" rel="noopener noreferrer">Web oficial Mataró Bus ↗</a></section>
   </main>
   <script type="module" src="./mataro-bus.js"></script>
 </body>
