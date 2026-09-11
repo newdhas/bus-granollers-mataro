@@ -1,7 +1,9 @@
-const CACHE = "bus-gm-v4";
+const CACHE = "bus-gm-v5";
 const ASSETS = [
   "./",
   "./index.html",
+  "./mataro-bus.html",
+  "./mataro-bus.js",
   "./styles.css",
   "./app.js",
   "./logic.js",
@@ -22,9 +24,6 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// Network-first: when GitHub Actions updates data.js, installed PWAs receive the
-// new timetable without needing a service-worker version change. If there is no
-// connection, the last valid cached version continues to work offline.
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
 
