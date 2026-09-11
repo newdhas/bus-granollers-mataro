@@ -1,5 +1,7 @@
 name: Monitor e13 timetable
 
+# Production source: official Sagalés PDF. The parser validates structure, stops,
+# times, trip counts and Saturday-only markings before any timetable is published.
 on:
   schedule:
     - cron: "17 */6 * * *"
