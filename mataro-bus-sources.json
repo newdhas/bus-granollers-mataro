@@ -1,0 +1,78 @@
+{
+  "source": "Avanza · Mataró Bus",
+  "official_index": "https://mataro.avanzagrupo.com/lineas-y-horarios/todas-las-lineas",
+  "lines": {
+    "1": {
+      "name": "Circular",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=1",
+      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_file": "mataro-bus-official/line-1.pdf",
+      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
+      "bytes": 662643,
+      "label": ""
+    },
+    "2": {
+      "name": "Circular",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=2",
+      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_file": "mataro-bus-official/line-2.pdf",
+      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
+      "bytes": 662643,
+      "label": ""
+    },
+    "3": {
+      "name": "Camí de la Serra - Vista Alegre - Rocafonda",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=3",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/3.pdf",
+      "pdf_file": "mataro-bus-official/line-3.pdf",
+      "sha256": "e08a7f5277d8eeafd71afb66f18e3747dbbe4eeb83c64c559e9d9af94c2e59f1",
+      "bytes": 3057893,
+      "label": "Consulti aquí"
+    },
+    "4": {
+      "name": "Cirera - Molins",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=4",
+      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_file": "mataro-bus-official/line-4.pdf",
+      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
+      "bytes": 662643,
+      "label": ""
+    },
+    "5": {
+      "name": "Rodalies - Hospital de Mataró",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=5",
+      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_file": "mataro-bus-official/line-5.pdf",
+      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
+      "bytes": 662643,
+      "label": ""
+    },
+    "6": {
+      "name": "Institut Català Salut - Ctra. de Mata",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=6",
+      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_file": "mataro-bus-official/line-6.pdf",
+      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
+      "bytes": 662643,
+      "label": ""
+    },
+    "7": {
+      "name": "Pl. Tereses - Cerdanyola",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=7",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/7.pdf",
+      "pdf_file": "mataro-bus-official/line-7.pdf",
+      "sha256": "64ac248de464dbf2dffa6fb5ba59f14db20ef28a4becdd387d59fc4f5087d6d6",
+      "bytes": 1671192,
+      "label": "Consulti aquí"
+    },
+    "8": {
+      "name": "Rodalies - Galícia",
+      "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=8",
+      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_file": "mataro-bus-official/line-8.pdf",
+      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
+      "bytes": 662643,
+      "label": ""
+    }
+  }
+}
