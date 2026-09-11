@@ -31,21 +31,32 @@ jobs:
 
       - name: Commit status and official snapshot when changed
         run: |
-          if [ -z "$(git status --porcelain -- official-status.json official-schedule.json)" ]; then
+          files=()
+          for f in official-status.json official-schedule.json; do
+            if [ -e "$f" ]; then
+              files+=("$f")
+            fi
+          done
+          if [ ${#files[@]} -eq 0 ] || [ -z "$(git status --porcelain -- "${files[@]}")" ]; then
             echo 'No source changes.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add official-status.json official-schedule.json
+          git add -- "${files[@]}"
           git commit -m 'Update official timetable verification'
           git pull --rebase origin main
           git push origin main
 
       - name: Open or update alert issue
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ ! -f official-status.json ]; then
+            echo 'No official-status.json generated.'
+            exit 1
+          fi
           ALERT=$(python3 -c "import json; print('true' if json.load(open('official-status.json')).get('alert') else 'false')")
           STATE=$(python3 -c "import json; print(json.load(open('official-status.json')).get('state','unknown'))")
           MESSAGE=$(python3 -c "import json; print(json.load(open('official-status.json')).get('message',''))")
