@@ -10,6 +10,9 @@
   <link rel="apple-touch-icon" href="./icon.svg" />
   <link rel="stylesheet" href="./styles.css" />
   <title>Bus Granollers ↔ Mataró</title>
+  <style>
+    .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0 18px}.mode-tabs a{display:block;text-align:center;padding:11px 12px;border-radius:12px;text-decoration:none;font-weight:700;background:#e5e7eb;color:#111827}.mode-tabs a.active{background:#111827;color:white}@media(prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}}
+  </style>
 </head>
 <body>
   <main class="app-shell">
@@ -20,6 +23,11 @@
       </div>
       <div class="clock" id="clock">--:--</div>
     </header>
+
+    <nav class="mode-tabs" aria-label="Tipo de autobús">
+      <a class="active" href="./index.html">e13</a>
+      <a href="./mataro-bus.html">Mataró Bus</a>
+    </nav>
 
     <section class="location-panel">
       <div>
