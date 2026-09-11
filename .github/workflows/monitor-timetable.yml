@@ -1,7 +1,9 @@
 name: Monitor e13 timetable
 
-# Production source: official Sagalés PDF. The parser validates structure, stops,
-# times, trip counts and Saturday-only markings before any timetable is published.
+# Production validation strategy:
+# 1) Generalitat / Mou-te is the primary official source.
+# 2) Sagalés is parsed as the operator source and cross-checked against Mou-te.
+# 3) data.js changes only when both sources pass validation and app tests succeed.
 on:
   schedule:
     - cron: "17 */6 * * *"
@@ -11,6 +13,7 @@ on:
     paths:
       - ".github/workflows/monitor-timetable.yml"
       - "scripts/monitor_timetable.py"
+      - "scripts/monitor_timetable_dual_source.py"
 
 permissions:
   contents: write
@@ -37,9 +40,9 @@ jobs:
       - name: Install parser dependencies
         run: pip install requests beautifulsoup4 pymupdf
 
-      - name: Check official Sagalés PDF
+      - name: Validate Mou-te primary source against Sagalés
         id: monitor
-        run: python scripts/monitor_timetable.py
+        run: python scripts/monitor_timetable_dual_source.py
 
       - name: Setup Node
         if: steps.monitor.outputs.status == 'updated'
@@ -64,9 +67,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data.js monitor/e13-state.json
           if [ "${{ steps.monitor.outputs.status }}" = "updated" ]; then
-            git commit -m "Auto-update e13 timetable from Sagalés"
+            git commit -m "Auto-update e13 timetable validated by Mou-te and Sagalés"
           else
-            git commit -m "Update e13 timetable monitor state"
+            git commit -m "Update e13 dual-source monitor state"
           fi
           git pull --rebase origin main
           git push origin main
@@ -79,29 +82,32 @@ jobs:
           MONITOR_MESSAGE: ${{ steps.monitor.outputs.message }}
           TEST_OUTCOME: ${{ steps.timetable_tests.outcome }}
         run: |
-          existing=$(gh issue list --state open --search "Nuevo PDF e13 pendiente de validar in:title" --json number --jq '.[0].number // empty')
+          title="Horario e13 pendiente de validar"
+          existing=$(gh issue list --state open --search "${title} in:title" --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             echo "An open review issue already exists: #$existing"
             exit 0
           fi
 
           if [ "$TEST_OUTCOME" = "failure" ]; then
-            reason="El PDF se pudo extraer, pero los tests de la aplicación fallaron."
+            reason="El nuevo horario pasó la validación de fuentes, pero los tests de la aplicación fallaron."
           else
             reason="$MONITOR_MESSAGE"
           fi
 
           body=$(cat <<EOF
-          Sagalés ha publicado un PDF de horarios e13 distinto al último aceptado, pero no se ha podido validar de forma suficientemente segura para publicarlo automáticamente.
+          La comprobación automática de la e13 no ha podido validar el cambio con suficiente seguridad.
 
-          **PDF detectado:** $PDF_URL
+          **Fuente principal:** Generalitat / Mou-te
+          **Fuente de contraste:** Sagalés
+          **Fuente detectada:** $PDF_URL
 
           **Motivo:** $reason
 
-          La web **no se ha modificado**. Hay que revisar el PDF antes de actualizar el horario.
+          La web **mantiene el horario anterior**. No se publica ningún cambio hasta que la validación vuelva a ser segura.
           EOF
           )
-          gh issue create --title "Nuevo PDF e13 pendiente de validar" --body "$body"
+          gh issue create --title "$title" --body "$body"
 
       - name: Fail if updated timetable tests failed
         if: steps.monitor.outputs.status == 'updated' && steps.timetable_tests.outcome == 'failure'
@@ -111,6 +117,8 @@ jobs:
         if: always()
         run: |
           echo "### Monitor e13" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Fuente primaria: Generalitat / Mou-te" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Contraste: Sagalés" >> "$GITHUB_STEP_SUMMARY"
           echo "- Estado: ${{ steps.monitor.outputs.status || 'error' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- PDF: ${{ steps.monitor.outputs.pdf_url || 'no disponible' }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frecuencia: cada 6 horas" >> "$GITHUB_STEP_SUMMARY"
