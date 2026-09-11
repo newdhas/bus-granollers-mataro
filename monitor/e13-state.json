@@ -5,8 +5,9 @@
   "last_changed_at": null,
   "pending_pdf_sha256": null,
   "pending_pdf_url": null,
-  "pending_detected_at": null,
-  "pending_error": null,
+  "pending_detected_at": "2026-09-11T10:13:37Z",
+  "pending_error": "Mou-te no contiene todas las horas propuestas por Sagalés; faltan 1: 07:20",
   "accepted_pdf_label": "Horarios e13 Sabadell-Mataró-Granollers (A partir del 15/09/2025)",
-  "last_checked_at": "2026-09-10T21:04:30Z"
+  "last_checked_at": "2026-09-11T10:13:37Z",
+  "dual_source_status": "pending-review"
 }
