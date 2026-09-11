@@ -10,6 +10,7 @@ on:
       - "scripts/sync_mataro_bus.py"
       - "scripts/dump_mataro_pdf_text.py"
       - "scripts/extract_mataro_tables.py"
+      - "scripts/analyze_mataro_tables.py"
       - ".github/workflows/sync-mataro-bus.yml"
 
 permissions:
@@ -39,15 +40,18 @@ jobs:
       - name: Download official Avanza PDFs
         run: python scripts/sync_mataro_bus.py
 
-      - name: Extract PDF text for parser development
+      - name: Extract PDF text
         run: python scripts/dump_mataro_pdf_text.py
 
       - name: Detect timetable tables
         run: python scripts/extract_mataro_tables.py
 
+      - name: Analyze timetable columns
+        run: python scripts/analyze_mataro_tables.py
+
       - name: Commit official timetable files
         run: |
-          git add mataro-bus-official mataro-bus-sources.json mataro-bus-pdf-text.json mataro-bus-text mataro-bus-tables.json
+          git add mataro-bus-official mataro-bus-sources.json mataro-bus-pdf-text.json mataro-bus-text mataro-bus-tables.json mataro-bus-table-summary.json
           if git diff --cached --quiet; then
             echo "No timetable changes."
             exit 0
