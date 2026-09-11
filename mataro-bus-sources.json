@@ -5,20 +5,20 @@
     "1": {
       "name": "Circular",
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=1",
-      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/1.pdf",
       "pdf_file": "mataro-bus-official/line-1.pdf",
-      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
-      "bytes": 662643,
-      "label": ""
+      "sha256": "fa2383f6bbfb52055100b0de2926b9a7bc752a36dd605bc65ffbd116adaf24cc",
+      "bytes": 2625327,
+      "label": "Horario oficial Avanza"
     },
     "2": {
       "name": "Circular",
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=2",
-      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/2.pdf",
       "pdf_file": "mataro-bus-official/line-2.pdf",
-      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
-      "bytes": 662643,
-      "label": ""
+      "sha256": "f2a5980e4e2baf7a06405061a6ab4d7a7a6202cc60f3c08a0897fa47cd1f98b2",
+      "bytes": 2587588,
+      "label": "Horario oficial Avanza"
     },
     "3": {
       "name": "Camí de la Serra - Vista Alegre - Rocafonda",
@@ -27,34 +27,34 @@
       "pdf_file": "mataro-bus-official/line-3.pdf",
       "sha256": "e08a7f5277d8eeafd71afb66f18e3747dbbe4eeb83c64c559e9d9af94c2e59f1",
       "bytes": 3057893,
-      "label": "Consulti aquí"
+      "label": "Horario oficial Avanza"
     },
     "4": {
       "name": "Cirera - Molins",
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=4",
-      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/4.pdf",
       "pdf_file": "mataro-bus-official/line-4.pdf",
-      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
-      "bytes": 662643,
-      "label": ""
+      "sha256": "88af5d6380e2df7225653af302e82d957128ede60d73089e5af184d5e894e8e1",
+      "bytes": 1315898,
+      "label": "Horario oficial Avanza"
     },
     "5": {
       "name": "Rodalies - Hospital de Mataró",
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=5",
-      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/5.pdf",
       "pdf_file": "mataro-bus-official/line-5.pdf",
-      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
-      "bytes": 662643,
-      "label": ""
+      "sha256": "8ab83ec2ef56f25a700d553d324728c341dcc84f7edd816b9bee3e2217d37180",
+      "bytes": 2634919,
+      "label": "Horario oficial Avanza"
     },
     "6": {
       "name": "Institut Català Salut - Ctra. de Mata",
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=6",
-      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/6.pdf",
       "pdf_file": "mataro-bus-official/line-6.pdf",
-      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
-      "bytes": 662643,
-      "label": ""
+      "sha256": "d7b7130bd59831d50943c9432d2b95e2c8c4accd0d4603ecc345b8184eacb717",
+      "bytes": 1969139,
+      "label": "Horario oficial Avanza"
     },
     "7": {
       "name": "Pl. Tereses - Cerdanyola",
@@ -63,16 +63,16 @@
       "pdf_file": "mataro-bus-official/line-7.pdf",
       "sha256": "64ac248de464dbf2dffa6fb5ba59f14db20ef28a4becdd387d59fc4f5087d6d6",
       "bytes": 1671192,
-      "label": "Consulti aquí"
+      "label": "Horario oficial Avanza"
     },
     "8": {
       "name": "Rodalies - Galícia",
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=8",
-      "pdf_url": "https://avanzagrupo.com/wp-content/uploads/2026/01/CertificadoENS-2025-GRUPO.pdf",
+      "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/8.pdf",
       "pdf_file": "mataro-bus-official/line-8.pdf",
-      "sha256": "dbfd78f3e7d93244b3a5011c2bb3fe8c658b4a90608d6c5a1098ac2d35c15c77",
-      "bytes": 662643,
-      "label": ""
+      "sha256": "062c9c2632f86e1d3e0786da199c065232b1ce854ad686ed6d5f7f578411e29e",
+      "bytes": 1704229,
+      "label": "Horario oficial Avanza"
     }
   }
 }
