@@ -12,6 +12,12 @@ const LINE1_STOPS = [
   'Hospital de Mataró','El Cargol','Santa Anna','Muralla','Camínet','Parc Central','Cabanellas','Escola Freta',
   'P. Picasso','Perú','Caputxins','Sant Oleguer','CAP Cirera Molins','Cirera'
 ];
+const HOSPITAL_INDEX = LINE1_STOPS.indexOf('Hospital de Mataró');
+const LINE1_HOSPITAL_STOPS = LINE1_STOPS.slice(0, HOSPITAL_INDEX + 1);
+const LINE1_RODALIES_STOPS = [
+  ...LINE1_STOPS.slice(HOSPITAL_INDEX),
+  'Rodalies'
+];
 
 const ROSSELLO_1024 = {
   weekday: ['05:36','06:36','06:57','07:06','07:14','07:27','07:39','07:53','08:09','08:18','08:29','08:42','08:55','09:09','09:23','09:36','09:49','10:02','10:15','10:27','10:40','10:53','11:06','11:19','11:32','11:44','11:57','12:10','12:24','12:37','12:50','13:02','13:15','13:28','13:41','13:54','14:07','14:19','14:32','14:45','14:59','15:13','15:27','15:40','15:52','16:04','16:17','16:31','16:45','16:59','17:12','17:25','17:38','17:52','18:06','18:20','18:33','18:45','18:58','19:12','19:26','19:39','19:50','20:03','20:14','20:28','20:45','21:03','21:14','21:27','21:40','21:54','22:09','22:22','22:33','22:46'],
@@ -86,10 +92,10 @@ function renderStops(){
   const group=visibleGroups[Number(scheduleSelect.value)||0];
   if(currentLine===1){
     const direction=directionKey(group);
-    const ordered=direction==='hospital'?LINE1_STOPS:[...LINE1_STOPS].reverse();
-    stopSelect.innerHTML=ordered.map(name=>`<option value="${name}">${name}${name==='Rosselló'&&direction==='hospital'?' · 1024':''}</option>`).join('');
-    const preferred=[...stopSelect.options].find(o=>o.value==='Rosselló');
-    if(preferred)stopSelect.value='Rosselló';
+    const stops=direction==='hospital'?LINE1_HOSPITAL_STOPS:LINE1_RODALIES_STOPS;
+    stopSelect.innerHTML=stops.map(name=>`<option value="${name}">${name}${name==='Rosselló'&&direction==='hospital'?' · 1024':''}</option>`).join('');
+    if(direction==='hospital'&&[...stopSelect.options].some(o=>o.value==='Rosselló'))stopSelect.value='Rosselló';
+    else stopSelect.selectedIndex=0;
   }else stopSelect.innerHTML=(group?.stops||[]).map((s,i)=>`<option value="${i}">${s.name}</option>`).join('');
   renderTimes();
 }
