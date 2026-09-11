@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - "scripts/sync_mataro_bus.py"
+      - "scripts/dump_mataro_pdf_text.py"
       - ".github/workflows/sync-mataro-bus.yml"
 
 permissions:
@@ -32,14 +33,17 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4
+        run: pip install requests beautifulsoup4 pymupdf
 
       - name: Download official Avanza PDFs
         run: python scripts/sync_mataro_bus.py
 
+      - name: Extract PDF text for parser development
+        run: python scripts/dump_mataro_pdf_text.py
+
       - name: Commit official timetable files
         run: |
-          git add mataro-bus-official mataro-bus-sources.json
+          git add mataro-bus-official mataro-bus-sources.json mataro-bus-pdf-text.json
           if git diff --cached --quiet; then
             echo "No timetable changes."
             exit 0
