@@ -43,7 +43,7 @@ jobs:
 
       - name: Commit official timetable files
         run: |
-          git add mataro-bus-official mataro-bus-sources.json mataro-bus-pdf-text.json
+          git add mataro-bus-official mataro-bus-sources.json mataro-bus-pdf-text.json mataro-bus-text
           if git diff --cached --quiet; then
             echo "No timetable changes."
             exit 0
