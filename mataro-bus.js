@@ -1,3 +1,5 @@
+import { HOLIDAYS } from './data.js';
+
 const lines = [
   [1,'Circular'],[2,'Circular'],[3,'Camí de la Serra · Vista Alegre · Rocafonda'],[4,'Cirera · Molins'],
   [5,'Rodalies · Hospital de Mataró'],[6,'Institut Català Salut · Ctra. de Mata'],[7,'Pl. Tereses · Cerdanyola'],[8,'Rodalies · Galícia']
@@ -27,6 +29,25 @@ root.innerHTML=lines.map(([id,name])=>`
 function minutes(v){const [h,m]=v.split(':').map(Number);return h*60+m}
 function nowMinutes(){const d=new Date();return d.getHours()*60+d.getMinutes()}
 function findTimes(value){return typeof value==='string' ? (value.match(/\b\d{2}:\d{2}\b/g)||[]) : []}
+function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function isSummer(d){const md=(d.getMonth()+1)*100+d.getDate();return md>=615&&md<=914}
+function dayType(d){
+  if(HOLIDAYS.has(dateKey(d)) || d.getDay()===0) return 'holiday';
+  if(d.getDay()===6) return 'saturday';
+  return 'weekday';
+}
+function calendarLabel(g){
+  const day={weekday:'Laborable',saturday:'Sábado',holiday:'Domingo/festivo'}[g.dayType]||'Horario';
+  return `${day} · ${g.season==='summer'?'verano':'invierno'}`;
+}
+
+function classifyGroup(page,table){
+  const [x1,y1]=table.bbox||[0,0];
+  let type='weekday';
+  if(x1>=390 && y1<300) type='saturday';
+  else if(x1>=390 && y1>=300) type='holiday';
+  return {dayType:type,season:page>=3?'summer':'winter'};
+}
 
 function extractGroups(summaryLine,rawLine){
   const out=[];
@@ -45,14 +66,24 @@ function extractGroups(summaryLine,rawLine){
         if(unique.length>=2) timeCols.push(unique);
       }
 
-      const stops=table.pairs.map((p,i)=>({
-        name:p.name||p.raw_name||`Parada ${i+1}`,
-        times:timeCols[i]||[]
-      })).filter(s=>s.times.length);
-      if(stops.length) out.push({page:page.page,table:table.index,stops});
+      const stops=table.pairs.map((p,i)=>({name:p.name||p.raw_name||`Parada ${i+1}`,times:timeCols[i]||[]})).filter(s=>s.times.length);
+      if(stops.length){
+        const cal=classifyGroup(page.page,table);
+        out.push({page:page.page,table:table.index,stops,...cal});
+      }
     }
   }
   return out;
+}
+
+function autoGroupIndex(){
+  const now=new Date();
+  const wantedDay=dayType(now);
+  const wantedSeason=isSummer(now)?'summer':'winter';
+  let i=groups.findIndex(g=>g.dayType===wantedDay&&g.season===wantedSeason);
+  if(i<0) i=groups.findIndex(g=>g.dayType===wantedDay);
+  if(i<0) i=0;
+  return i;
 }
 
 function renderStops(){
@@ -69,9 +100,9 @@ function renderTimes(){
   const upcoming=times.filter(t=>minutes(t)>=now).slice(0,5);
 
   if(upcoming.length){
-    nextDepartures.innerHTML=`<div class="next-box"><div style="font-size:12px;font-weight:800;letter-spacing:.08em">PRÓXIMAS SALIDAS</div><div class="next-time">${upcoming[0]}</div><div style="margin-top:7px;font-weight:700">${upcoming.slice(1).join(' · ')||'Última salida disponible'}</div></div>`;
+    nextDepartures.innerHTML=`<div class="next-box"><div style="font-size:12px;font-weight:800;letter-spacing:.08em">PRÓXIMAS SALIDAS · ${calendarLabel(group).toUpperCase()}</div><div class="next-time">${upcoming[0]}</div><div style="margin-top:7px;font-weight:700">${upcoming.slice(1).join(' · ')||'Última salida disponible'}</div></div>`;
   }else{
-    nextDepartures.innerHTML=`<div class="next-box"><strong>No quedan salidas posteriores en este horario</strong></div>`;
+    nextDepartures.innerHTML=`<div class="next-box"><strong>No quedan salidas posteriores</strong><div style="margin-top:6px">${calendarLabel(group)}</div></div>`;
   }
   allTimes.innerHTML=times.map(t=>`<span class="time-chip">${t}</span>`).join('');
 }
@@ -96,11 +127,11 @@ async function openLine(id){
     }
     groups=extractGroups(summaryData[String(id)],tableData[String(id)]);
     if(!groups.length) throw new Error('Sin datos extraídos');
-    scheduleSelect.innerHTML=groups.map((g,i)=>`<option value="${i}">Horario ${i+1} · pág. ${g.page}</option>`).join('');
+    scheduleSelect.innerHTML=groups.map((g,i)=>`<option value="${i}">${calendarLabel(g)} · bloque ${i+1}</option>`).join('');
+    scheduleSelect.value=String(autoGroupIndex());
     renderStops();
   }catch(e){
-    scheduleSelect.innerHTML='';
-    stopSelect.innerHTML='';
+    scheduleSelect.innerHTML='';stopSelect.innerHTML='';
     nextDepartures.innerHTML=`<div class="next-box"><strong>No he podido mostrar los datos.</strong><div style="margin-top:6px">Puedes abrir el PDF oficial debajo.</div></div>`;
   }
 }
