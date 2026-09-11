@@ -12,6 +12,7 @@ import urllib3
 from bs4 import BeautifulSoup
 
 BASE = "https://mataro.avanzagrupo.com"
+DOC_BASE = f"{BASE}/documents/1527332/2689989"
 OUT_DIR = Path("mataro-bus-official")
 META = Path("mataro-bus-sources.json")
 UA = "Mozilla/5.0 (compatible; bus-granollers-mataro/1.0; +https://github.com/newdhas/bus-granollers-mataro)"
@@ -28,17 +29,20 @@ LINE_NAMES = {
 
 
 def fetch(session: requests.Session, url: str) -> requests.Response:
-    # Avanza currently serves an incomplete certificate chain to some automated
-    # clients. Disable CA verification only for this exact official host; all
-    # other hosts keep normal TLS verification.
     verify = urlparse(url).hostname != "mataro.avanzagrupo.com"
     r = session.get(url, timeout=40, allow_redirects=True, verify=verify)
     r.raise_for_status()
     return r
 
 
+def is_pdf(response: requests.Response) -> bool:
+    return response.content.startswith(b"%PDF-") or "application/pdf" in response.headers.get("content-type", "").lower()
+
+
 def score_candidate(url: str, text: str, line: int) -> int:
     hay = f"{url} {text}".lower()
+    if "certificadoens" in hay or "wp-content" in hay:
+        return -1000
     score = 0
     if ".pdf" in url.lower():
         score += 100
@@ -48,6 +52,8 @@ def score_candidate(url: str, text: str, line: int) -> int:
         score += 10
     if re.search(rf"(?:linea|l[ií]nia|linia)[-_ ]?0*{line}(?:\D|$)", hay):
         score += 25
+    if f"/{line}.pdf" in url.lower():
+        score += 200
     if "matar" in hay:
         score += 15
     return score
@@ -63,14 +69,14 @@ def extract_pdf_candidates(page_url: str, html: str, line: int) -> list[tuple[in
         url = urljoin(page_url, raw)
         text = " ".join(tag.stripped_strings).strip()
         score = score_candidate(url, text, line)
-        if score:
+        if score > 0:
             found.append((score, url, text))
 
-    # Liferay sometimes stores document URLs in JSON/JS attributes rather than anchors.
     for raw in re.findall(r'https?://[^"\'<> ]+|/documents/[^"\'<> ]+|/o/[^"\'<> ]+\.pdf[^"\'<> ]*', html, re.I):
         url = urljoin(page_url, raw.replace("&amp;", "&"))
-        if ".pdf" in url.lower() or "/documents/" in url.lower():
-            found.append((score_candidate(url, "", line), url, ""))
+        score = score_candidate(url, "", line)
+        if score > 0 and (".pdf" in url.lower() or "/documents/" in url.lower()):
+            found.append((score, url, ""))
 
     best: dict[str, tuple[int, str]] = {}
     for score, url, text in found:
@@ -80,38 +86,42 @@ def extract_pdf_candidates(page_url: str, html: str, line: int) -> list[tuple[in
 
 
 def resolve_line_pdf(session: requests.Session, line: int) -> tuple[str, bytes, str, str]:
+    detail_page = f"{BASE}/detalle-linea?idBusLine={line}"
+    errors: list[str] = []
+
+    # Avanza's current official line documents follow this stable Liferay path.
+    # Lines 3 and 7 expose exactly this URL in the page; try the same official
+    # document slot for all lines before falling back to HTML discovery.
+    direct = f"{DOC_BASE}/{line}.pdf"
+    try:
+        pdf = fetch(session, direct)
+        if is_pdf(pdf):
+            return pdf.url, pdf.content, "Horario oficial Avanza", detail_page
+    except Exception as exc:
+        errors.append(f"{direct}: {exc}")
+
     page_variants = [
-        f"{BASE}/detalle-linea?idBusLine={line}",
+        detail_page,
         f"{BASE}/detalle-linea?idBusLine={line:03d}",
         f"{BASE}/ca/detalle-linea?idBusLine={line}",
         f"{BASE}/ca/detalle-linea?idBusLine={line:03d}",
     ]
-    errors: list[str] = []
     for page in page_variants:
         try:
             resp = fetch(session, page)
         except Exception as exc:
             errors.append(f"{page}: {exc}")
             continue
-
-        candidates = extract_pdf_candidates(resp.url, resp.text, line)
-        if not candidates:
-            errors.append(f"{page}: página accesible, sin enlace PDF detectable")
-
-        for _score, url, label in candidates:
+        for _score, url, label in extract_pdf_candidates(resp.url, resp.text, line):
             try:
                 pdf = fetch(session, url)
             except Exception as exc:
                 errors.append(f"{url}: {exc}")
                 continue
-            ctype = pdf.headers.get("content-type", "").lower()
-            if pdf.content.startswith(b"%PDF-") or "application/pdf" in ctype:
-                return pdf.url, pdf.content, label, resp.url
+            if is_pdf(pdf):
+                return pdf.url, pdf.content, label or "Horario oficial Avanza", resp.url
 
-    raise RuntimeError(
-        f"Línea {line}: no se ha encontrado un PDF oficial descargable. "
-        + " | ".join(errors[-8:])
-    )
+    raise RuntimeError(f"Línea {line}: no se ha encontrado un PDF oficial de horario. " + " | ".join(errors[-8:]))
 
 
 def main() -> int:
