@@ -5,9 +5,9 @@
   "last_changed_at": null,
   "pending_pdf_sha256": null,
   "pending_pdf_url": null,
-  "pending_detected_at": "2026-09-12T15:29:32Z",
-  "pending_error": "Mou-te no contiene todas las horas propuestas por Sagalés; faltan 1: 07:20",
+  "pending_detected_at": "2026-09-12T20:32:04Z",
+  "pending_error": "HTTPSConnectionPool(host='www.sagales.com', port=443): Max retries exceeded with url: /front/js-nexus/planificador/pdf.php?id=555&ids=-1&idioma=es&nocache=1789245094.6423934 (Caused by ConnectTimeoutError(<HTTPSConnection(host='www.sagales.com', port=443) at 0x7f3467b9c080>, 'Connection to www.sagales.com timed out. (connect timeout=30)'))",
   "accepted_pdf_label": "Horarios e13 Sabadell-Mataró-Granollers (A partir del 15/09/2025)",
-  "last_checked_at": "2026-09-12T15:29:32Z",
+  "last_checked_at": "2026-09-12T20:32:04Z",
   "dual_source_status": "pending-review"
 }
