@@ -1,5 +1,13 @@
-import { COORDS, ROUTES, HOLIDAY_YEARS } from "./data.js";
-import { dateKey, getUpcomingTrips, tripsForDate, getCalendarLabel, minutesUntil } from "./logic.js";
+import { COORDS, HOLIDAY_YEARS } from "./data.js";
+import { STOP_CHOICES } from "./stops-data.js";
+import {
+  dateKey,
+  getUpcomingTripsForStops,
+  tripsForStopsDate,
+  getCalendarLabel,
+  minutesUntil,
+  getStop,
+} from "./logic.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -9,9 +17,10 @@ const locationText = $("locationText");
 const locateBtn = $("locateBtn");
 const toMataroBtn = $("toMataroBtn");
 const toGranollersBtn = $("toGranollersBtn");
-const originName = $("originName");
-const destinationName = $("destinationName");
+const originStopSelect = $("originStopSelect");
+const destinationStopSelect = $("destinationStopSelect");
 const scheduleDate = $("scheduleDate");
+const dateDisplayLabel = $("dateDisplayLabel");
 const prevDateBtn = $("prevDateBtn");
 const nextDateBtn = $("nextDateBtn");
 const todayBtn = $("todayBtn");
@@ -60,6 +69,22 @@ function longDateLabel(date) {
   });
 }
 
+function compactDateLabel(date, now) {
+  const base = date.toLocaleDateString("es-ES", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  }).replace(/\./g, "");
+
+  const today = new Date(now); today.setHours(0,0,0,0);
+  const target = new Date(date); target.setHours(0,0,0,0);
+  const diff = Math.round((target - today) / 86400000);
+  if (diff === 0) return `Hoy · ${base}`;
+  if (diff === 1) return `Mañana · ${base}`;
+  if (diff === -1) return `Ayer · ${base}`;
+  return base;
+}
+
 function dayLabel(date, now) {
   const a = new Date(now); a.setHours(0,0,0,0);
   const b = new Date(date); b.setHours(0,0,0,0);
@@ -96,16 +121,43 @@ function shiftSelectedDate(days) {
   setSelectedDate(date, true);
 }
 
+function stopStorageKey(kind) {
+  return `e13Stop:${direction}:${kind}`;
+}
+
+function optionForStop(stopId) {
+  const stop = getStop(direction, stopId);
+  if (!stop) return "";
+  return `<option value="${stop.id}">${stop.name}</option>`;
+}
+
+function populateStopSelectors() {
+  const config = STOP_CHOICES[direction];
+  const storedOrigin = localStorage.getItem(stopStorageKey("origin"));
+  const storedDestination = localStorage.getItem(stopStorageKey("destination"));
+  const origin = config.origins.includes(storedOrigin) ? storedOrigin : config.defaultOrigin;
+  const destination = config.destinations.includes(storedDestination) ? storedDestination : config.defaultDestination;
+
+  originStopSelect.innerHTML = config.origins.map(optionForStop).join("");
+  destinationStopSelect.innerHTML = config.destinations.map(optionForStop).join("");
+  originStopSelect.value = origin;
+  destinationStopSelect.value = destination;
+}
+
+function currentStops() {
+  return {
+    originStopId: originStopSelect.value,
+    destinationStopId: destinationStopSelect.value,
+  };
+}
+
 function setDirection(nextDirection, render = true) {
   direction = nextDirection;
   localStorage.setItem("busDirection", direction);
 
   toMataroBtn.classList.toggle("active", direction === "toMataro");
   toGranollersBtn.classList.toggle("active", direction === "toGranollers");
-
-  const route = ROUTES[direction];
-  originName.textContent = route.origin;
-  destinationName.textContent = route.destination;
+  populateStopSelectors();
 
   if (render) renderTrips();
 }
@@ -117,11 +169,15 @@ function renderTrips() {
   if (!datePinned) scheduleDate.value = dateKey(now);
   const serviceDate = selectedServiceDate(now);
   const viewingToday = isSameDay(serviceDate, now);
+  dateDisplayLabel.textContent = compactDateLabel(serviceDate, now);
+  todayBtn.classList.toggle("hidden", viewingToday);
   pageTitle.textContent = viewingToday ? "Próximo bus" : "Horario e13";
+
+  const { originStopId, destinationStopId } = currentStops();
 
   let trips;
   if (viewingToday) {
-    trips = getUpcomingTrips(now, direction, 5);
+    trips = getUpcomingTripsForStops(now, direction, originStopId, destinationStopId, 5);
 
     const todayCalendar = getCalendarLabel(now);
     const tomorrowTrip = trips.find(trip => dayLabel(trip.departureDate, now) === "mañana");
@@ -134,7 +190,7 @@ function renderTrips() {
       calendarChip.textContent = `Hoy: ${todayCalendar}`;
     }
   } else {
-    trips = tripsForDate(serviceDate, direction);
+    trips = tripsForStopsDate(serviceDate, direction, originStopId, destinationStopId);
     calendarChip.textContent = `${longDateLabel(serviceDate)} · ${getCalendarLabel(serviceDate)}`;
   }
 
@@ -146,7 +202,7 @@ function renderTrips() {
   }
 
   if (!trips.length) {
-    results.innerHTML = `<div class="empty">No se han encontrado expediciones para ${longDateLabel(serviceDate)}.</div>`;
+    results.innerHTML = `<div class="empty">No se han encontrado expediciones para estas paradas el ${longDateLabel(serviceDate)}.</div>`;
     return;
   }
 
@@ -255,6 +311,14 @@ function useLocation() {
 locateBtn.addEventListener("click", useLocation);
 toMataroBtn.addEventListener("click", () => setDirection("toMataro"));
 toGranollersBtn.addEventListener("click", () => setDirection("toGranollers"));
+originStopSelect.addEventListener("change", () => {
+  localStorage.setItem(stopStorageKey("origin"), originStopSelect.value);
+  renderTrips();
+});
+destinationStopSelect.addEventListener("change", () => {
+  localStorage.setItem(stopStorageKey("destination"), destinationStopSelect.value);
+  renderTrips();
+});
 prevDateBtn.addEventListener("click", () => shiftSelectedDate(-1));
 nextDateBtn.addEventListener("click", () => shiftSelectedDate(1));
 todayBtn.addEventListener("click", () => setSelectedDate(new Date(), false));
