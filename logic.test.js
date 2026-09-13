@@ -1,7 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TIMETABLES } from "./data.js";
-import { getScheduleType, getUpcomingTrips, tripsForDate, makeTripDates } from "./logic.js";
+import { STOP_CHOICES, STOP_TIMETABLES } from "./stops-data.js";
+import {
+  getScheduleType,
+  getUpcomingTrips,
+  tripsForDate,
+  tripsForStopsDate,
+  makeTripDates,
+} from "./logic.js";
 
 test("un día laborable devuelve cinco próximas salidas ordenadas", () => {
   const now = new Date(2026, 8, 7, 9, 3, 0);
@@ -47,6 +54,56 @@ test("todos los calendarios tienen ambos sentidos, horas válidas y salidas úni
       for (const trip of trips) {
         assert.match(trip.departure, time);
         assert.match(trip.arrival, time);
+      }
+    }
+  }
+});
+
+test("las paradas por defecto reproducen exactamente el horario anterior", () => {
+  const dates = [
+    new Date(2026, 8, 7, 12, 0),  // laborable
+    new Date(2026, 8, 6, 12, 0),  // festivo/verano
+    new Date(2026, 0, 11, 12, 0), // festivo/invierno
+  ];
+
+  for (const date of dates) {
+    for (const direction of ["toMataro", "toGranollers"]) {
+      const cfg = STOP_CHOICES[direction];
+      const legacy = tripsForDate(date, direction).map(t => [t.departure, t.arrival]);
+      const byStops = tripsForStopsDate(
+        date,
+        direction,
+        cfg.defaultOrigin,
+        cfg.defaultDestination,
+      ).map(t => [t.departure, t.arrival]);
+      assert.deepEqual(byStops, legacy);
+    }
+  }
+});
+
+test("seleccionar otra parada cambia la hora de paso usando la misma expedición", () => {
+  const date = new Date(2026, 8, 7, 12, 0);
+  const trips = tripsForStopsDate(date, "toMataro", "9458", "3314");
+  assert.equal(trips[0].departure, "06:00");
+  assert.equal(trips[0].arrival, "06:35");
+});
+
+test("las horas de cada fila de paradas avanzan en orden y sin saltos imposibles", () => {
+  for (const calendar of ["weekday", "summer", "winter"]) {
+    for (const direction of ["toMataro", "toGranollers"]) {
+      for (const row of STOP_TIMETABLES[calendar][direction]) {
+        let previous = null;
+        for (const value of row.times) {
+          if (!value) continue;
+          const [hour, minute] = value.split(":").map(Number);
+          let current = hour * 60 + minute;
+          if (previous !== null && current < previous) current += 1440;
+          if (previous !== null) {
+            assert.ok(current >= previous, `${calendar}/${direction}: ${row.times.join(" → ")}`);
+            assert.ok(current - previous <= 90, `${calendar}/${direction}: salto imposible ${row.times.join(" → ")}`);
+          }
+          previous = current;
+        }
       }
     }
   }
