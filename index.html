@@ -19,7 +19,7 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">e13 · Granollers ↔ Mataró</p>
-        <h1>Próximo bus</h1>
+        <h1 id="pageTitle">Próximo bus</h1>
       </div>
       <div class="clock" id="clock">--:--</div>
     </header>
@@ -59,6 +59,16 @@
         <span class="muted">Destino</span>
         <strong id="destinationName">—</strong>
       </div>
+    </section>
+
+    <section class="date-panel" aria-label="Seleccionar día del horario">
+      <button id="prevDateBtn" class="date-nav-btn" type="button" aria-label="Día anterior">‹</button>
+      <label class="date-picker" for="scheduleDate">
+        <span class="muted">Día del viaje</span>
+        <input id="scheduleDate" type="date" />
+      </label>
+      <button id="nextDateBtn" class="date-nav-btn" type="button" aria-label="Día siguiente">›</button>
+      <button id="todayBtn" class="secondary-btn today-btn" type="button">Hoy</button>
     </section>
 
     <div class="calendar-chip" id="calendarChip">—</div>
