@@ -4,6 +4,7 @@ name: Monitor e13 timetable
 # 1) Generalitat / Mou-te is the primary official source.
 # 2) Sagalés is parsed as the operator source and cross-checked against Mou-te.
 # 3) data.js changes only when both sources pass validation and app tests succeed.
+# 4) stops-data.js is regenerated only from the currently accepted Sagalés PDF.
 on:
   schedule:
     - cron: "17 */6 * * *"
@@ -14,6 +15,7 @@ on:
       - ".github/workflows/monitor-timetable.yml"
       - "scripts/monitor_timetable.py"
       - "scripts/monitor_timetable_dual_source.py"
+      - "scripts/generate_stop_data.py"
 
 permissions:
   contents: write
@@ -44,6 +46,9 @@ jobs:
         id: monitor
         run: python scripts/monitor_timetable_dual_source.py
 
+      - name: Generate timed stop data from accepted Sagalés PDF
+        run: python scripts/generate_stop_data.py
+
       - name: Setup Node
         if: steps.monitor.outputs.status == 'updated'
         uses: actions/setup-node@v4
@@ -59,17 +64,17 @@ jobs:
       - name: Commit monitor state or timetable update
         if: steps.monitor.outputs.status != 'updated' || steps.timetable_tests.outcome == 'success'
         run: |
-          if git diff --quiet -- data.js monitor/e13-state.json; then
+          if git diff --quiet -- data.js stops-data.js monitor/e13-state.json; then
             echo "No repository changes to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data.js monitor/e13-state.json
+          git add data.js stops-data.js monitor/e13-state.json
           if [ "${{ steps.monitor.outputs.status }}" = "updated" ]; then
             git commit -m "Auto-update e13 timetable validated by Mou-te and Sagalés"
           else
-            git commit -m "Update e13 dual-source monitor state"
+            git commit -m "Update e13 timetable source data"
           fi
           git pull --rebase origin main
           git push origin main
