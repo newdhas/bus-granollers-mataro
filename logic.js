@@ -1,5 +1,5 @@
-
 import { HOLIDAYS, TIMETABLES } from "./data.js";
+import { STOP_SEQUENCES, STOP_TIMETABLES } from "./stops-data.js";
 
 export function dateKey(date) {
   const y = date.getFullYear();
@@ -66,6 +66,56 @@ export function getUpcomingTrips(now, direction, count = 5) {
     serviceDate.setDate(serviceDate.getDate() + offset);
 
     for (const trip of tripsForDate(serviceDate, direction)) {
+      if (trip.departureDate >= now) {
+        result.push({ ...trip, serviceDate: new Date(serviceDate) });
+        if (result.length >= count) break;
+      }
+    }
+  }
+
+  return result;
+}
+
+export function getStop(direction, stopId) {
+  return STOP_SEQUENCES[direction]?.find(stop => stop.id === stopId) || null;
+}
+
+export function tripsForStopsDate(serviceDate, direction, originStopId, destinationStopId) {
+  const sequence = STOP_SEQUENCES[direction] || [];
+  const originIndex = sequence.findIndex(stop => stop.id === originStopId);
+  const destinationIndex = sequence.findIndex(stop => stop.id === destinationStopId);
+  if (originIndex < 0 || destinationIndex < 0 || destinationIndex <= originIndex) return [];
+
+  const type = getScheduleType(serviceDate);
+  const isSaturdayWorking = serviceDate.getDay() === 6 && !isHoliday(serviceDate);
+  const rows = STOP_TIMETABLES[type]?.[direction] || [];
+
+  return rows.flatMap(row => {
+    if (row.saturdayOnly && !isSaturdayWorking) return [];
+    const departure = row.times[originIndex];
+    const arrival = row.times[destinationIndex];
+    if (!departure || !arrival) return [];
+
+    const trip = { departure, arrival, saturdayOnly: row.saturdayOnly };
+    return [{
+      ...trip,
+      ...makeTripDates(serviceDate, trip),
+      scheduleType: type,
+      originStopId,
+      destinationStopId,
+    }];
+  });
+}
+
+export function getUpcomingTripsForStops(now, direction, originStopId, destinationStopId, count = 5) {
+  const result = [];
+
+  for (let offset = 0; offset < 8 && result.length < count; offset++) {
+    const serviceDate = new Date(now);
+    serviceDate.setHours(0, 0, 0, 0);
+    serviceDate.setDate(serviceDate.getDate() + offset);
+
+    for (const trip of tripsForStopsDate(serviceDate, direction, originStopId, destinationStopId)) {
       if (trip.departureDate >= now) {
         result.push({ ...trip, serviceDate: new Date(serviceDate) });
         if (result.length >= count) break;
