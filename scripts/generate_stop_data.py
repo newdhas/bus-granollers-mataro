@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 from pathlib import Path
 
 import pymupdf
@@ -103,8 +105,11 @@ def parse_full_rows(pdf_bytes: bytes):
 
 
 def render(data) -> str:
-    lines = ["// Generado automáticamente desde el PDF oficial de Sagalés. No editar a mano.",
-             "const r = (times, saturdayOnly = false) => ({ times, saturdayOnly });", ""]
+    lines = [
+        "// Generado automáticamente desde el PDF oficial de Sagalés. No editar a mano.",
+        "const r = (times, saturdayOnly = false) => ({ times, saturdayOnly });",
+        "",
+    ]
 
     lines.append("export const STOP_SEQUENCES = {")
     for direction in ("toMataro", "toGranollers"):
@@ -147,6 +152,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--local-pdf")
     parser.add_argument("--output", default="stops-data.js")
+    parser.add_argument("--state", default="monitor/e13-state.json")
     args = parser.parse_args()
 
     if args.local_pdf:
@@ -156,6 +162,15 @@ def main() -> int:
         session = requests.Session()
         session.headers.update({"User-Agent": USER_AGENT, "Accept-Language": "es-ES,es;q=0.9"})
         source, pdf_bytes, _label = resolve_official_pdf(session)
+
+        state_path = Path(args.state)
+        if state_path.exists():
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            accepted_hash = state.get("accepted_pdf_sha256")
+            current_hash = hashlib.sha256(pdf_bytes).hexdigest()
+            if accepted_hash and current_hash != accepted_hash:
+                print("El PDF actual de Sagalés aún no está aceptado; stops-data.js se mantiene sin cambios.")
+                return 0
 
     data = parse_full_rows(pdf_bytes)
     Path(args.output).write_text(render(data), encoding="utf-8")
