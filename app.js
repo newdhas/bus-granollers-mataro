@@ -174,23 +174,11 @@ function renderTrips() {
   pageTitle.textContent = viewingToday ? "Próximo bus" : "Horario e13";
 
   const { originStopId, destinationStopId } = currentStops();
+  const trips = tripsForStopsDate(serviceDate, direction, originStopId, destinationStopId);
 
-  let trips;
   if (viewingToday) {
-    trips = getUpcomingTripsForStops(now, direction, originStopId, destinationStopId, 5);
-
-    const todayCalendar = getCalendarLabel(now);
-    const tomorrowTrip = trips.find(trip => dayLabel(trip.departureDate, now) === "mañana");
-    if (tomorrowTrip) {
-      const tomorrowCalendar = getCalendarLabel(tomorrowTrip.departureDate);
-      calendarChip.textContent = tomorrowCalendar === todayCalendar
-        ? `Hoy y mañana: ${todayCalendar}`
-        : `Hoy: ${todayCalendar} · Mañana: ${tomorrowCalendar}`;
-    } else {
-      calendarChip.textContent = `Hoy: ${todayCalendar}`;
-    }
+    calendarChip.textContent = `Hoy: ${getCalendarLabel(now)}`;
   } else {
-    trips = tripsForStopsDate(serviceDate, direction, originStopId, destinationStopId);
     calendarChip.textContent = `${longDateLabel(serviceDate)} · ${getCalendarLabel(serviceDate)}`;
   }
 
@@ -206,9 +194,8 @@ function renderTrips() {
     return;
   }
 
-  const first = trips[0];
-
   if (!viewingToday) {
+    const first = trips[0];
     const rows = trips.slice(1).map(trip => `
       <article class="trip-row">
         <div class="trip-time">${formatTime(trip.departureDate)}</div>
@@ -239,16 +226,13 @@ function renderTrips() {
     return;
   }
 
-  const firstDay = dayLabel(first.departureDate, now);
-  const firstTag = firstDay === "hoy" ? "" : `<span class="day-tag">${firstDay}</span>`;
+  const nextToday = trips.find(trip => trip.departureDate >= now);
+  const nextTrip = nextToday || getUpcomingTripsForStops(now, direction, originStopId, destinationStopId, 1)[0];
 
-  const rows = trips.slice(1).map(trip => `
+  const rows = trips.map(trip => `
     <article class="trip-row">
-      <div>
-        <div class="trip-time">${formatTime(trip.departureDate)}</div>
-        ${dayLabel(trip.departureDate, now) === "hoy" ? "" : `<span class="day-tag">${dayLabel(trip.departureDate, now)}</span>`}
-      </div>
-      <div class="trip-countdown">${countdownText(now, trip.departureDate)}</div>
+      <div class="trip-time">${formatTime(trip.departureDate)}</div>
+      <div class="trip-countdown">${durationText(trip.departureDate, trip.arrivalDate)}</div>
       <div class="trip-arrival">
         <span>Llegada</span>
         <strong>${formatTime(trip.arrivalDate)}</strong>
@@ -256,17 +240,25 @@ function renderTrips() {
     </article>
   `).join("");
 
+  if (!nextTrip) {
+    results.innerHTML = rows;
+    return;
+  }
+
+  const nextDay = dayLabel(nextTrip.departureDate, now);
+  const nextTag = nextDay === "hoy" ? "" : `<span class="day-tag">${nextDay}</span>`;
+
   results.innerHTML = `
     <article class="next-card">
       <div class="next-label">PRÓXIMO</div>
       <div class="next-main">
         <div>
-          <div class="next-time">${formatTime(first.departureDate)}</div>
-          <div class="countdown">${countdownText(now, first.departureDate)} ${firstTag}</div>
+          <div class="next-time">${formatTime(nextTrip.departureDate)}</div>
+          <div class="countdown">${countdownText(now, nextTrip.departureDate)} ${nextTag}</div>
         </div>
         <div class="arrival">
           <span>Llegada</span>
-          <strong>${formatTime(first.arrivalDate)}</strong>
+          <strong>${formatTime(nextTrip.arrivalDate)}</strong>
         </div>
       </div>
     </article>
