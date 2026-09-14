@@ -50,7 +50,15 @@ function minutes(v){const [h,m]=v.split(':').map(Number);return h*60+m}
 function nowMinutes(){const d=new Date();return d.getHours()*60+d.getMinutes()}
 function findTimes(value){return typeof value==='string' ? (value.match(/\b\d{2}:\d{2}\b/g)||[]) : []}
 function dateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-function isSummer(d){const md=(d.getMonth()+1)*100+d.getDate();return md>=615&&md<=914}
+const SUMMER_PERIODS = {
+  2026: ['2026-07-27','2026-08-21']
+};
+function isSummer(d){
+  const period=SUMMER_PERIODS[d.getFullYear()];
+  if(!period)return false;
+  const key=dateKey(d);
+  return key>=period[0]&&key<=period[1];
+}
 function autoDayType(d){if(HOLIDAYS.has(dateKey(d))||d.getDay()===0)return 'holiday';if(d.getDay()===6)return 'saturday';return 'weekday'}
 function selectedDayType(){return globalCalendar.value==='auto'?autoDayType(new Date()):globalCalendar.value}
 function selectedSeason(){return isSummer(new Date())?'summer':'winter'}
