@@ -226,10 +226,28 @@ function renderTrips() {
     return;
   }
 
-  const nextToday = trips.find(trip => trip.departureDate >= now);
-  const nextTrip = nextToday || getUpcomingTripsForStops(now, direction, originStopId, destinationStopId, 1)[0];
+  const remainingToday = trips.filter(trip => trip.departureDate >= now);
+  const nextTrip = remainingToday[0] || getUpcomingTripsForStops(now, direction, originStopId, destinationStopId, 1)[0];
 
-  const rows = trips.map(trip => `
+  if (!nextTrip) {
+    results.innerHTML = `<div class="empty">No se han encontrado próximas expediciones.</div>`;
+    return;
+  }
+
+  const nextIsToday = isSameDay(nextTrip.departureDate, now);
+  let followingTrips;
+
+  if (nextIsToday) {
+    followingTrips = remainingToday.slice(1);
+  } else {
+    const nextServiceDate = new Date(nextTrip.departureDate);
+    nextServiceDate.setHours(12, 0, 0, 0);
+    followingTrips = tripsForStopsDate(nextServiceDate, direction, originStopId, destinationStopId)
+      .filter(trip => trip.departureDate > nextTrip.departureDate);
+    calendarChip.textContent = `Hoy: ${getCalendarLabel(now)} · Próximo servicio ${dayLabel(nextTrip.departureDate, now)}: ${getCalendarLabel(nextTrip.departureDate)}`;
+  }
+
+  const rows = followingTrips.map(trip => `
     <article class="trip-row">
       <div class="trip-time">${formatTime(trip.departureDate)}</div>
       <div class="trip-countdown">${durationText(trip.departureDate, trip.arrivalDate)}</div>
@@ -239,11 +257,6 @@ function renderTrips() {
       </div>
     </article>
   `).join("");
-
-  if (!nextTrip) {
-    results.innerHTML = rows;
-    return;
-  }
 
   const nextDay = dayLabel(nextTrip.departureDate, now);
   const nextTag = nextDay === "hoy" ? "" : `<span class="day-tag">${nextDay}</span>`;
