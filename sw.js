@@ -1,9 +1,11 @@
-const CACHE = "bus-gm-v9";
+const CACHE = "bus-gm-v10";
 const ASSETS = [
   "./",
   "./index.html",
   "./mataro-bus.html",
   "./mataro-bus.js",
+  "./planner.html",
+  "./planner.js",
   "./styles.css",
   "./app.js",
   "./logic.js",
