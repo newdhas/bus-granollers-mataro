@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="Planificador de Mataró Bus + e13 hacia Granollers con horarios oficiales." />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>Planificar ruta · Mataró → Granollers</title>
+  <style>
+    .mode-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 18px}.mode-tabs a{display:block;text-align:center;padding:11px 8px;border-radius:12px;text-decoration:none;font-weight:700;background:#e5e7eb;color:#111827;font-size:.88rem}.mode-tabs a.active{background:#111827;color:#fff}
+    .planner-card,.planner-results{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:20px;padding:16px}.planner-card{display:grid;gap:12px}.planner-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.planner-field{display:block;min-width:0}.planner-field.full{grid-column:1/-1}.planner-field span{display:block;color:var(--muted);font-size:.72rem;font-weight:750;margin:0 0 5px 2px}.planner-field select,.planner-field input{width:100%;min-width:0;height:48px;padding:0 12px;border:1px solid var(--line);border-radius:14px;background:var(--soft);color:var(--text);font-weight:800;outline:0}.planner-action{height:50px;border:0;border-radius:14px;background:var(--accent);color:var(--accent-contrast);font-weight:900;cursor:pointer}.planner-note{margin:0;color:var(--muted);font-size:.74rem;line-height:1.45}.planner-status{margin:12px 0;padding:10px 12px;border-radius:14px;background:var(--soft);color:var(--muted);font-size:.78rem;font-weight:750}.planner-results{display:grid;gap:10px}.planner-results.empty-state{color:var(--muted);font-size:.86rem;line-height:1.5}.route-option{border:1px solid var(--line);border-radius:18px;background:var(--card-solid);padding:15px}.route-option-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.route-duration{font-size:1.35rem;font-weight:900;letter-spacing:-.03em}.route-window{color:var(--muted);font-size:.82rem;font-weight:750;margin-top:2px}.route-arrival{text-align:right}.route-arrival span{display:block;color:var(--muted);font-size:.7rem}.route-arrival strong{font-size:1.15rem}.route-chain{display:flex;align-items:center;gap:7px;margin-bottom:12px}.route-pill{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:30px;padding:0 9px;border-radius:9px;color:#fff;font-weight:900;font-size:.85rem}.route-pill.urban{background:#8b2c83}.route-pill.e13{background:#14a83b}.route-arrow-small{color:var(--muted);font-weight:900}.route-steps{display:grid;gap:8px}.route-step{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;align-items:start;font-size:.82rem;line-height:1.35}.route-step time{font-weight:900}.route-step span{color:var(--muted)}.route-warning{padding:11px 12px;border:1px solid var(--line);border-radius:14px;color:var(--muted);font-size:.76rem;line-height:1.45}.planner-loading{opacity:.7}.source-pill{display:inline-flex;padding:4px 7px;border-radius:999px;background:var(--soft);color:var(--muted);font-size:.66rem;font-weight:900;letter-spacing:.06em}
+    @media(max-width:420px){.planner-grid{grid-template-columns:1fr}.planner-field.full{grid-column:auto}.mode-tabs a{font-size:.79rem;padding-left:5px;padding-right:5px}}
+    @media(prefers-color-scheme:dark){.mode-tabs a{background:#26313f;color:#f8fafc}.mode-tabs a.active{background:#f8fafc;color:#111827}}
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div><p class="eyebrow">Mataró Bus + e13</p><h1>Planificar ruta</h1></div>
+      <div class="clock" id="plannerClock">--:--</div>
+    </header>
+
+    <nav class="mode-tabs" aria-label="Secciones">
+      <a href="./index.html">e13</a>
+      <a href="./mataro-bus.html">Mataró Bus</a>
+      <a class="active" href="./planner.html">Planificar</a>
+    </nav>
+
+    <section class="planner-card">
+      <div class="planner-grid">
+        <label class="planner-field">
+          <span>Línea urbana</span>
+          <select id="plannerLine" aria-label="Línea urbana"></select>
+        </label>
+        <label class="planner-field">
+          <span>Subir en</span>
+          <select id="plannerStop" aria-label="Parada de origen"></select>
+        </label>
+        <label class="planner-field">
+          <span>Día</span>
+          <input id="plannerDate" type="date" aria-label="Día del viaje" />
+        </label>
+        <label class="planner-field">
+          <span>Salir a partir de</span>
+          <input id="plannerDepart" type="time" aria-label="Hora mínima de salida" />
+        </label>
+        <label class="planner-field">
+          <span>Llegar antes de</span>
+          <input id="plannerArrive" type="time" aria-label="Hora máxima de llegada" />
+        </label>
+        <label class="planner-field">
+          <span>Margen en Rodalies</span>
+          <select id="plannerTransfer" aria-label="Margen de transbordo">
+            <option value="3">3 min</option>
+            <option value="5" selected>5 min</option>
+            <option value="7">7 min</option>
+            <option value="10">10 min</option>
+          </select>
+        </label>
+        <label class="planner-field full">
+          <span>Destino</span>
+          <select id="plannerDestination" aria-label="Destino en Granollers">
+            <option value="2365">Estació d’Autobusos de Granollers</option>
+            <option value="9458">Rodalies Granollers Centre</option>
+          </select>
+        </label>
+      </div>
+      <button id="plannerSearch" class="planner-action" type="button">Buscar combinaciones</button>
+      <p class="planner-note">Combina una línea urbana de Mataró con el e13 en Rodalies. Solo se usan paradas con hora publicada en los PDFs oficiales.</p>
+    </section>
+
+    <div id="plannerStatus" class="planner-status">Cargando horarios oficiales…</div>
+    <section id="plannerResults" class="planner-results empty-state">Selecciona origen y hora para calcular la ruta.</section>
+
+    <section class="info-card">
+      <strong>Cómo se calcula</strong>
+      <p>Usa los horarios programados de Mataró Bus sincronizados en la app y el horario e13 validado con Sagalés. No utiliza Google Maps ni ninguna API de pago.</p>
+      <p>El resultado no incluye retrasos en tiempo real, tráfico, obras ni incidencias. El margen de transbordo evita conexiones demasiado ajustadas en Rodalies.</p>
+    </section>
+  </main>
+  <script type="module" src="./planner.js"></script>
+</body>
+</html>
