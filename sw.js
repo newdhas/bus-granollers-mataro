@@ -1,4 +1,4 @@
-const CACHE = "bus-gm-v11";
+const CACHE = "bus-gm-v12";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const ASSETS = [
   "./mataro-bus.js",
   "./planner.html",
   "./planner.js",
+  "./planner-v2.js",
   "./styles.css",
   "./app.js",
   "./logic.js",
