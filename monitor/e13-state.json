@@ -5,9 +5,9 @@
   "last_changed_at": null,
   "pending_pdf_sha256": null,
   "pending_pdf_url": null,
-  "pending_detected_at": "2026-10-07T23:03:16Z",
+  "pending_detected_at": "2026-10-08T05:59:07Z",
   "pending_error": "Faltan códigos de servicio de Mou-te: ['298', '367']",
   "accepted_pdf_label": "Horarios e13 Sabadell-Mataró-Granollers (A partir del 15/09/2025)",
-  "last_checked_at": "2026-10-07T23:03:16Z",
+  "last_checked_at": "2026-10-08T05:59:07Z",
   "dual_source_status": "pending-review"
 }
