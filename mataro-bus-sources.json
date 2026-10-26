@@ -7,8 +7,8 @@
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=1",
       "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/1.pdf",
       "pdf_file": "mataro-bus-official/line-1.pdf",
-      "sha256": "fa2383f6bbfb52055100b0de2926b9a7bc752a36dd605bc65ffbd116adaf24cc",
-      "bytes": 2625327,
+      "sha256": "9cfe60e1ed21a2b8450bb6485e932e53950bab73989e0d29bc91bc872703c8a4",
+      "bytes": 3234911,
       "label": "Horario oficial Avanza"
     },
     "2": {
@@ -16,8 +16,8 @@
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=2",
       "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/2.pdf",
       "pdf_file": "mataro-bus-official/line-2.pdf",
-      "sha256": "f2a5980e4e2baf7a06405061a6ab4d7a7a6202cc60f3c08a0897fa47cd1f98b2",
-      "bytes": 2587588,
+      "sha256": "b60cf288dc7da5b282df3dc3af086b3a4f3429f7104112feb544768080732c4f",
+      "bytes": 3174567,
       "label": "Horario oficial Avanza"
     },
     "3": {
@@ -61,8 +61,8 @@
       "detail_page": "https://mataro.avanzagrupo.com/detalle-linea?idBusLine=7",
       "pdf_url": "https://mataro.avanzagrupo.com/documents/1527332/2689989/7.pdf",
       "pdf_file": "mataro-bus-official/line-7.pdf",
-      "sha256": "64ac248de464dbf2dffa6fb5ba59f14db20ef28a4becdd387d59fc4f5087d6d6",
-      "bytes": 1671192,
+      "sha256": "52398569fb5edcd9d54e290f43240a0e9d63233caa90d559a00909994c9af4fd",
+      "bytes": 2296535,
       "label": "Horario oficial Avanza"
     },
     "8": {
